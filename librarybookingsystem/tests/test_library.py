@@ -147,6 +147,38 @@ class TestLibrarySystem(BaseTest):
         res = self.lib.return_book(person=self.p1, book=self.b1, number=number)
         assert res == output
 
+    # @pytest.mark.skip
+    def test_return_book_with_partials_returned(self):
+        self.lib._transactions = {
+            self.p1: {
+                self.b1: [
+                    {
+                        "date_borrowed": "2025-11-29 11:47:22.313414",
+                        "return_deadline": "2025-12-04 11:47:22.313414",
+                        "is_returned": False,
+                        "quantity": 3,
+                        "num_returned": 1,
+                        "return_history": [
+                            {"date": "2025-11-29 11:47:32.832293", "quantity": 1},
+                            # {"date": "2025-11-29 11:47:49.172666", "quantity": 2},
+                        ],
+                    }
+                ]
+            }
+        }
+        self.lib.return_book(
+            person=self.p1,
+            book=self.b1,
+            number=2
+        )
+        self.lib.return_book(
+            person=self.p1,
+            book=self.b1,
+            number=1
+        )
+        assert self.lib._transactions[self.p1][self.b1][0]['num_returned'] == 3
+        
+
     @pytest.mark.parametrize("number", [0, -1])
     def test_return_book_with_different_numbers_less_than_one_raise_error(self, number):
         "For if a number less than zero tries to be returned"
