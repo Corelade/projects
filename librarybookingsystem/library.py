@@ -13,6 +13,16 @@ This is a System that manages a Library's books and members.
 """
 
 
+def to_normal_dict(obj):
+    if isinstance(obj, defaultdict):
+        obj = dict(obj)
+    if isinstance(obj, dict):
+        return {k: to_normal_dict(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [to_normal_dict(i) for i in obj]
+    return obj
+
+
 class Book:
     _book_id = 0
 
@@ -57,7 +67,7 @@ class Library:
 
     def add_book(self, book):
         if not isinstance(book, Book):
-            raise Exception("This is not a valid Book")
+            raise TypeError("This is not a valid Book")
         else:
             self._books.add(book)
             return self._books
@@ -66,7 +76,7 @@ class Library:
 
     def add_member(self, person):
         if not isinstance(person, Person):
-            return "This is not a valid Person"
+            raise TypeError("This is not a valid Person")
         else:
             self._members.add(person)
             return self._members
@@ -123,7 +133,7 @@ class Library:
                     print(f"Not Enough '{book}' available")
                 return False
             raise ValueError("Book Not Found")
-        raise ValueError("Not a Valid Book")
+        raise TypeError("Not a Valid Book")
 
     def return_book(self, *, person, book, number):
         """
@@ -159,19 +169,11 @@ class Library:
                 book.quantity += number
                 return True
             raise ValueError("Book Not Found")
-        raise ValueError("Not a Valid Book")
+        raise TypeError("Not a Valid Book")
 
     "View books or members"
 
     def info(self):
-        def to_normal_dict(obj):
-            if isinstance(obj, defaultdict):
-                obj = dict(obj)
-            if isinstance(obj, dict):
-                return {k: to_normal_dict(v) for k, v in obj.items()}
-            if isinstance(obj, list):
-                return [to_normal_dict(i) for i in obj]
-            return obj
 
         # print("")
         # # if books:
@@ -216,7 +218,7 @@ def book_interaction(
     books,
     members_container,
     books_container,
-    library
+    library,
 ):
     print(f"Who is {action} this book? ")
     print({key.id: key.name for key in members})
@@ -237,7 +239,7 @@ def book_interaction(
                     print("Invalid Input! Only Numbers allowed")
                     continue
                 try:
-                    if action == 'borrowing':
+                    if action == "borrowing":
                         library.borrow_book(person=user, book=book, number=num)
                     else:
                         library.return_book(person=user, book=book, number=num)
@@ -273,7 +275,7 @@ def main():
             break
 
         elif user_input == "1":
-            'Create User'
+            "Create User"
             user_name = input("What is the person's name? ").strip()
             p = Person(user_name)
             users[p.id] = p
@@ -281,7 +283,7 @@ def main():
             # print(users)
 
         elif user_input == "2":
-            'Create Book'
+            "Create Book"
             book_name = input("What is the book's name? ").strip()
             book_author = input("Who is the author? ").strip()
             book_quantity = None
@@ -299,7 +301,7 @@ def main():
             print("")
 
         elif user_input == "3":
-            'Add Person to Library'
+            "Add Person to Library"
             if len(users) == 0:
                 print("No user exists")
                 continue
@@ -316,7 +318,7 @@ def main():
                 print("")
 
         elif user_input == "4":
-            'Add book tp library'
+            "Add book tp library"
             if len(books) == 0:
                 print("No book exists")
                 continue
@@ -332,36 +334,36 @@ def main():
                 print("")
 
         elif user_input == "5":
-            'To borrow a book'
+            "To borrow a book"
             book_interaction(
-                action='borrowing',
+                action="borrowing",
                 members=lib._members,
                 books=lib._books,
                 members_container=users,
                 books_container=books,
-                library=lib
+                library=lib,
             )
 
         elif user_input == "6":
-            'To return a book'
+            "To return a book"
             book_interaction(
-                action='returning',
+                action="returning",
                 members=lib._members,
                 books=lib._books,
                 members_container=users,
                 books_container=books,
-                library=lib
+                library=lib,
             )
-            
+
         elif user_input == "7":
-            'Edit a book'
+            "Edit a book"
             print(books)
-            print('Which book do you want to edit? ')
+            print("Which book do you want to edit? ")
             book = get_instance(books)
             print("To Edit Book Title, Input 0")
-            print('To Edit Author, Input 1')
-            print('To Edit Quantity, Input 2')
-            prompt = input('Select an action: ')
+            print("To Edit Author, Input 1")
+            print("To Edit Quantity, Input 2")
+            prompt = input("Select an action: ")
             if prompt not in ["0", "1", "2"]:
                 continue
             elif prompt == "0":
@@ -371,12 +373,13 @@ def main():
                 author = input(f"What do you want to rename {book.author} to? ")
                 book.author = author
             elif prompt == "2":
-                book_quantity = input(f"What do you want to change {book.quantity} to? ")
+                book_quantity = input(
+                    f"What do you want to change {book.quantity} to? "
+                )
                 book.quantity = book_quantity
             else:
                 continue
             print(book.title, book.author, book.quantity)
-            
 
         print("")
         print("Current Library State")
