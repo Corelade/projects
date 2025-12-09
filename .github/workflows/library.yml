@@ -3,7 +3,7 @@ name: Library Actions
 on:
     push:
         paths:
-            - library.py
+            - librarybookingsystem/library.py
         branches:
             - main
 
