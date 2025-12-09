@@ -388,6 +388,7 @@ def main():
 
 def random_function():
     print('do_nothing')
+    print('do_nothing')
 
 
 if __name__ == "__main__":
