@@ -6,6 +6,7 @@ on:
         #     - librarybookingsystem/library.py
         branches:
             - main
+    workflow_dispatch:
 
 jobs:
     test_code: #name of job
