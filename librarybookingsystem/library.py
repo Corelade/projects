@@ -386,11 +386,6 @@ def main():
         pprint(lib.info())
 
 
-def random_function():
-    print('do_nothing')
-    print('do_nothing')
-
-
 if __name__ == "__main__":
     main()
     # TODO You can't edit the quantity of a book that has been borrowed
