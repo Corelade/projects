@@ -22,5 +22,4 @@ jobs:
             - name: Run tests
               working-directory: librarybookingsystem
               run:
-                  pwd
                   pytest tests/test_library.py
