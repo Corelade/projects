@@ -2,8 +2,8 @@ name: Library Actions
 
 on:
     push:
-        paths:
-            - librarybookingsystem/library.py
+        # paths:
+        #     - librarybookingsystem/library.py
         branches:
             - main
 
@@ -22,4 +22,4 @@ jobs:
               working-directory: librarybookingsystem
               run:
                   pwd
-                  # pytest tests/test_library.py/
+                  pytest tests/test_library.py
