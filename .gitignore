@@ -1,5 +1,6 @@
 venv/
 prime/
 pictophrase/
+schedule/
 __pycache__
 .pytest_cache
