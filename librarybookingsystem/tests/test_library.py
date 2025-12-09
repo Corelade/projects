@@ -109,8 +109,8 @@ class TestLibrarySystem(BaseTest):
 
     def test_book_not_valid_error(self):
         "Book not valid for borrow book function"
-        with pytest.raises(TypeError, match="Not a Valid Books"):
-            self.lib.borrow_book(person=self.p1, book="Invalid Books", number=2)
+        with pytest.raises(TypeError, match="Not a Valid Book"):
+            self.lib.borrow_book(person=self.p1, book="Invalid Book", number=2)
 
     def test_book_not_found_error(self):
         "Book not found for borrow book function"
