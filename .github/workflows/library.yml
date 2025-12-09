@@ -2,8 +2,9 @@ name: Library Actions
 
 on:
     push:
-        # paths:
-        #     - librarybookingsystem/library.py
+        paths:
+            - librarybookingsystem/library.py
+            - librarybookingsystem/tests/
         branches:
             - main
     workflow_dispatch:
