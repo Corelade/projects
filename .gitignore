@@ -2,5 +2,6 @@ venv/
 prime/
 pictophrase/
 schedule/
+hackerrank/
 __pycache__
 .pytest_cache
