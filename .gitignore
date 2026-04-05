@@ -1,0 +1,16 @@
+media/
+gitvenv/
+.mypy_cache/
+.DS_Store
+/word_game
+/crime_data
+/imageConverter
+__pycache__/
+shift_scheduling/schedule.py
+shift_scheduling/note.txt
+
+games/lucky_draw/lucky_draw.py
+games/lucky_draw/readme.md
+shuffle/index.html
+shuffle/index.js
+shuffle/index.css
