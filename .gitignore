@@ -1,5 +1,6 @@
 media/
 gitvenv/
+svenv/
 .mypy_cache/
 .DS_Store
 /word_game
@@ -8,7 +9,7 @@ gitvenv/
 __pycache__/
 shift_scheduling/schedule.py
 shift_scheduling/note.txt
-
+.pytest_cache
 games/lucky_draw/lucky_draw.py
 games/lucky_draw/readme.md
 shuffle/index.html
