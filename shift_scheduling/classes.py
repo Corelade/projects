@@ -53,9 +53,7 @@ class Staff:
 
     def is_valid(self):
         # return self.min_hours <= self.hours_worked <= self.contract_hours
-        return self.working is True and (
-            self.min_hours <= self.hours_worked <= self.contract_hours
-        )
+        return self.hours_worked <= self.contract_hours
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Staff):

@@ -53,15 +53,29 @@ class TestCheckFeasibility(BaseClass):
             is_feasibile([self.shoes], [self.kolade, self.motun]) is False
         )  # both staff not available evenings and will leave empty space
         assert (
-            is_feasibile([self.mens], [self.kolade, self.kunle, self.segun, self.motun])
+            is_feasibile([self.mens], [self.riri, self.halafia, self.segun, self.daoud])
             is False
         )
         assert is_feasibile([self.shoes, self.ladies], [self.bola, self.core]) is False
+        # assertion for controlling max_hours as a staff shouldnt work more than 35 hours in a week
+        assert (
+            is_feasibile(
+                [self.mens],
+                [self.bola],
+                DAY_OF_WEEK=[
+                    "monday",
+                    "tuesday",
+                    "wednesday",
+                    "thursday",
+                ],
+            )
+            is False
+        )
 
     # @pytest.mark.skip(reason='tried')
     def test_feasibility_is_true(self):
         """These checks should return True"""
-        assert is_feasibile([self.mens], [self.bola]) is True
+        assert is_feasibile([self.mens], [self.bola], ["monday", "tuesday"]) is True
         assert is_feasibile([self.mens], [self.bola, self.core]) is True
         assert is_feasibile([self.mens], [self.bola, self.core, self.kunle]) is True
         # checking two depts with one department requiring at least 2 people at all times
@@ -83,7 +97,7 @@ class TestCheckFeasibility(BaseClass):
             is True
         )
 
-
+# @pytest.mark.skip(reason='tried')
 def test_get_other_staff():
     assignment = {
         "monday": {
@@ -129,4 +143,6 @@ def test_get_other_staff():
     res2 = ["bola", "core", "star"]
 
     assert all(staff in get_other_staff(assignment, shoes, "monday") for staff in res1)
-    assert all(staff in get_other_staff(assignment, ladies, "wednesday") for staff in res2)
+    assert all(
+        staff in get_other_staff(assignment, ladies, "wednesday") for staff in res2
+    )

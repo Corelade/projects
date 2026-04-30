@@ -4,6 +4,7 @@ import random
 from collections import defaultdict
 import json
 import time
+from typing import Literal
 
 # create departments
 shoes = Department("shoes", 1)
@@ -31,11 +32,11 @@ ayo = Staff("ayo", "associate")
 daoud = Staff("daoud", "associate")
 hasan = Staff("hasan", "associate")
 zara = Staff("zara", "associate")
-# bukayo = Staff("bukayo", "associate")
-# bola = Staff("bola", "associate")
-# niran = Staff("niran", "associate")
-# divine = Staff("divine", "associate")
-# taiwo = Staff("taiwo", "associate")
+bukayo = Staff("bukayo", "associate")
+bola = Staff("bola", "associate")
+niran = Staff("niran", "associate")
+divine = Staff("divine", "associate")
+taiwo = Staff("taiwo", "associate")
 # sam = Staff("sam", "associate")
 # bosun = Staff("bosun", "associate")
 # claudia = Staff("claudia", "associate")
@@ -105,7 +106,11 @@ def to_normal_dict(d):
     return d
 
 
-def is_feasibile(depts: list[Department], staff_arr: list[Staff]):
+def is_feasibile(
+    depts: list[Department],
+    staff_arr: list[Staff],
+    DAY_OF_WEEK=DAY_OF_WEEK,
+):
     """
     1 dept -> 1 person - True
     1 dept -> 2 persons - True
@@ -129,9 +134,12 @@ def is_feasibile(depts: list[Department], staff_arr: list[Staff]):
     NUM_SHIFTS = 3
     # this gets the total number of shifts that need filling
     shifts_to_fill = 0
+    # max_shifts_to_fill = 0
     for dept in depts:
         req_hours = dept.min_num_staff * NUM_SHIFTS
         shifts_to_fill += req_hours
+        # max_req_hours = dept.max_num_staff * NUM_SHIFTS
+        # max_shifts_to_fill += max_req_hours
 
     if shifts_to_fill < len(staff_arr):
         # i.e too many staff available
@@ -151,7 +159,15 @@ def is_feasibile(depts: list[Department], staff_arr: list[Staff]):
     # check for required hours and staff hours
     "Each department is open for 12 hours a day"
     NUM_HOURS = 12
-    # required_hours = NUM_HOURS * len(depts)
+    """check for average working hour is within capacity"""
+    avail_hours = len(depts) * NUM_HOURS * len(DAY_OF_WEEK)
+    average_staff_hour = avail_hours / len(staff_arr)
+    print(
+        f"average_staff_hour -> {average_staff_hour}, avail_hours -> {avail_hours}, len(staff) -> {len(staff)}"
+    )
+    if 4 < average_staff_hour > 30:
+        "Either a staff works less than 4 hours or more than 30 hours"
+        return False
 
     for day in DAY_OF_WEEK:
         unfilled = defaultdict(int)
@@ -192,6 +208,7 @@ def is_feasibile(depts: list[Department], staff_arr: list[Staff]):
     #     return True
 
     total_min_staff = sum(department.min_num_staff for department in depts)
+    # print(total_min_staff*12*5)
     # total_max_staff = sum(department.max_num_staff for department in depts)
 
     # total_num_staff = len(staff_arr)
@@ -206,7 +223,7 @@ def is_feasibile(depts: list[Department], staff_arr: list[Staff]):
     return True
 
 
-def valid_staff(staff_list):
+def get_valid_staff(staff_list):
     """
     This function takes the overall staff list and returns a valid staff member for assignment
     """
@@ -217,10 +234,10 @@ def valid_staff(staff_list):
     return random.choice(available_staff)
 
 
-def get_other_staff(assignment, domain: Department, cur_day):
-    '''
+def get_other_staff(assignment: dict, domain: Department, cur_day):
+    """
     Checks already assigned staff for a given day that are in other departments
-    '''
+    """
     assigned_staff_arr = [
         staff
         for day, val in assignment.items()
@@ -238,12 +255,15 @@ def is_valid(assignment: dict, domain: Department, tme, staff: Staff, day: str):
 
     """
     - One domain can not have more than its maximum capacity
-    - One staff can not be in more than one domain
+    - One staff can not be in more than one department on same day
     """
     # print(f'CHECKING VALIDATION FOR "{domain}"')
     # print(dict(assignment))
     # print("Num of staff in assignment", len(assignment[domain]))
     # print("Max allowable staff", domain.max_num_staff, "\n")
+
+    if not staff.is_valid():
+        return False
 
     # one domain can not have more than its max_cap
     if domain.max_num_staff < len(assignment[day][domain.department_name][tme]):
@@ -343,8 +363,11 @@ def backtrack(assignment):
                 tme not in dom.priority
                 and len(assignment[day][dom.department_name][tme]) < dom.min_num_staff
             )
+            # len(assignment[day][dom.department_name][tme]) < dom.max_num_staff
         )
     ]
+    if not valid_domains:
+        return assignment
     weights = [
         (
             10
@@ -387,6 +410,7 @@ def backtrack(assignment):
         # print(
         #     "checking validity...\nIs Valid? ",
         # )
+        stf.hours_worked += 4
         if is_valid(new_assignment, dom, tme, stf, day):
             # seen[dom][stf.name] += 4
             # print(
@@ -397,6 +421,7 @@ def backtrack(assignment):
             result = backtrack(new_assignment)
             if result:
                 return result
+        stf.hours_worked -= 4
         # print("before", to_normal_dict(new_assignment), "\n")
         # print(f"Removing {stf.name} from {dom.department_name} - {tme}")
         # new_assignment[dom.department_name][tme].remove(stf)
@@ -420,9 +445,11 @@ if __name__ == "__main__":
             }
             for day in DAY_OF_WEEK
         }
-        # print(json.dumps(to_normal_dict(assignment), indent=4))
         res = to_normal_dict(backtrack(assignment))
         print(json.dumps(res, indent=2))
+        # print(json.dumps(to_normal_dict(assignment), indent=4))
+        print([(stf.name, stf.hours_worked) for stf in staff], "\n")
+        # print(sum(stf.hours_worked for stf in staff)/ len(staff))
     # print(to_normal_dict(seen))
 
 
