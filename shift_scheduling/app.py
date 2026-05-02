@@ -3,8 +3,6 @@ import copy
 import random
 from collections import defaultdict
 import json
-import time
-from typing import Literal
 
 # create departments
 shoes = Department("shoes", 1)
@@ -14,11 +12,13 @@ ladies = Department("ladies", 2)
 processing = Department("processing", 4, 2)
 beauty = Department("beauty", 1)
 jewellery = Department("jewellery", 1)
+kids = Department("kids", 1)
+# lp = Department("lossProtection", 4)
 
 # create staff
-kolade = Staff("kolade", "associate", ["evening"])
+kolade = Staff("kolade", "associate", ["evening"], contract_hours=20)
 motun = Staff("motun", "associate")
-core = Staff("core", "associate")
+core = Staff("core", "associate", contract_hours=20)
 kunle = Staff("kunle", "associate")
 dara = Staff("dara", "associate")
 lanre = Staff("lanre", "associate")
@@ -37,11 +37,14 @@ bola = Staff("bola", "associate")
 niran = Staff("niran", "associate")
 divine = Staff("divine", "associate")
 taiwo = Staff("taiwo", "associate")
-# sam = Staff("sam", "associate")
+sam = Staff("sam", "associate")
 # bosun = Staff("bosun", "associate")
 # claudia = Staff("claudia", "associate")
 # mimi = Staff("mimi", "associate")
 # oba = Staff("oba", "associate")
+# kolly = Staff("kolly", "associate")
+# folly = Staff("folly", "associate")
+# solly = Staff("solly", "associate")
 
 departments: list[Department] = Department.list_departments()  # domiables
 staff: list[Staff] = Staff.list_staff_members()
@@ -49,7 +52,15 @@ staff: list[Staff] = Staff.list_staff_members()
 # domains = {department: staff for department in departments}
 
 shift_time = ["morning", "afternoon", "evening"]
-DAY_OF_WEEK = ["monday", "tuesday", "wednesday", "thursday", "friday"]
+DAY_OF_WEEK = [
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+    # "sunday",
+]
 domains = {
     day: {
         department: {tme: [stf for stf in staff] for tme in shift_time}
@@ -160,14 +171,24 @@ def is_feasibile(
     "Each department is open for 12 hours a day"
     NUM_HOURS = 12
     """check for average working hour is within capacity"""
-    avail_hours = len(depts) * NUM_HOURS * len(DAY_OF_WEEK)
-    average_staff_hour = avail_hours / len(staff_arr)
-    print(
-        f"average_staff_hour -> {average_staff_hour}, avail_hours -> {avail_hours}, len(staff) -> {len(staff)}"
+    # avail_hours = len(depts) * NUM_HOURS * len(DAY_OF_WEEK)
+    required_hours = sum(
+        dept.min_num_staff * NUM_HOURS * len(DAY_OF_WEEK) for dept in depts
     )
-    if 4 < average_staff_hour > 30:
-        "Either a staff works less than 4 hours or more than 30 hours"
+    available_capacity = sum(stf.contract_hours for stf in staff_arr)
+    # print(required_hours, available_capacity)
+    if required_hours > available_capacity:
+        print(
+            f"Required Hours -> {required_hours} is less than Available Capacity {available_capacity}"
+        )
         return False
+    # average_staff_hour = avail_hours / len(staff_arr)
+    # print(
+    #     f"average_staff_hour -> {average_staff_hour}, avail_hours -> {avail_hours}, len(staff) -> {len(staff)}"
+    # )
+    # if 4 < average_staff_hour > 30:
+    #     "Either a staff works less than 4 hours or more than 30 hours"
+    #     return False
 
     for day in DAY_OF_WEEK:
         unfilled = defaultdict(int)
@@ -223,18 +244,31 @@ def is_feasibile(
     return True
 
 
-def get_valid_staff(staff_list):
+def get_valid_staff(staff_list: list[Staff]):
     """
     This function takes the overall staff list and returns a valid staff member for assignment
     """
 
     copied_staff_list = copy.deepcopy(staff_list)
-    available_staff = [staff for staff in copied_staff_list if not staff.is_valid()]
+    available_staff = [staff for staff in copied_staff_list if staff.is_valid()]
 
-    return random.choice(available_staff)
+    if not available_staff:
+        return None
+
+    # weights = []
+
+    # for stf in available_staff:
+    #     # fewer hours → higher weight
+    #     weight = 1 / (stf.hours_worked + 1)
+    #     weights.append(weight)
+
+    # return random.choices(available_staff, weights=weights, k=1)[0]
+    return available_staff
 
 
-def get_other_staff(assignment: dict, domain: Department, cur_day):
+def get_other_staff(
+    assignment: dict[str, dict[str, dict]], domain: Department, cur_day
+):
     """
     Checks already assigned staff for a given day that are in other departments
     """
@@ -262,8 +296,11 @@ def is_valid(assignment: dict, domain: Department, tme, staff: Staff, day: str):
     # print("Num of staff in assignment", len(assignment[domain]))
     # print("Max allowable staff", domain.max_num_staff, "\n")
 
-    if not staff.is_valid():
-        return False
+    # if not staff.is_valid():
+    #     print(staff, staff.hours_worked, end='\n')
+    #     print(assignment)
+    #     time.sleep(10)
+    #     return False
 
     # one domain can not have more than its max_cap
     if domain.max_num_staff < len(assignment[day][domain.department_name][tme]):
@@ -318,9 +355,18 @@ seen = defaultdict(lambda: defaultdict(int))
 
 
 def backtrack(assignment):
+    # print([(st, st.hours_worked) for st in staff])
     # before running the main function, check if there is a solution
     # if not is_feasibile():
     #     return {}
+
+    """
+    check for the required number of staff is available
+    """
+    min_required_staff = sum(
+        dept.min_num_staff * len(shift_time) * len(DAY_OF_WEEK) for dept in departments
+    )
+    # print(min_required_staff)
 
     """
     This will count the total number of staff across all shifts
@@ -336,10 +382,19 @@ def backtrack(assignment):
             for stf in staff_list
         ]
     )
-    # if all staff has been assigned to departments
-    if len(assigned_staff_count) == len(staff):
-        # print("HEREEEE")
-        return assignment
+
+    num_assigned_staff = len(
+        [
+            stf
+            for day, val in assignment.items()
+            for department in val.values()
+            for staff_list in department.values()
+            for stf in staff_list
+        ]
+    )
+    # print('x ->', len(num_assigned_staff))
+    # print(staff)
+    # if all(stf.is_valid() for stf in staff):
 
     # print("Current Assignment ->", dict(assignment), '\n')
 
@@ -366,8 +421,24 @@ def backtrack(assignment):
             # len(assignment[day][dom.department_name][tme]) < dom.max_num_staff
         )
     ]
-    if not valid_domains:
-        return assignment
+
+    """
+    ASSIGNMENT SATISFACTION CHECKS
+    """
+    if (
+        (not valid_domains)
+        or (len(assigned_staff_count) == len(staff))
+        and (num_assigned_staff > min_required_staff)
+    ):
+        # if len(assigned_staff_count) == len(staff):
+        if all(st.hours_worked >= 8 for st in staff):
+        # if all(st.is_valid() for st in staff):
+            return assignment
+
+    """
+    ASSIGNMENT SATISFACTION CHECKS
+    """
+
     weights = [
         (
             10
@@ -390,17 +461,57 @@ def backtrack(assignment):
     day, dom, tme = random.choices(valid_domains, weights, k=1)[0]
     # print("'Selected Domain' ->", dom, "->", tme, "\n")
 
-    # print("Assignment ->", to_normal_dict(assignment), "\n")
-    for stf in domains[day][dom][tme]:
-        # print("cur dom", dom)
-        other_staff = set(get_other_staff(assignment, dom, day))
-        if stf.name in other_staff:
-            continue
+    "instead of looping over all staff everyday, get a random staff out of available staff"
+    # stf = get_valid_staff(staff)
+    # if stf is None:
+    #     return None
 
+    # valid_staff = [
+    #     stf
+    #     for stf in staff
+    #     if stf.name not in set(get_other_staff(assignment, dom, day))
+    # ]
+    # random.shuffle(valid_staff)
+
+    # print("Assignment ->", to_normal_dict(assignment), "\n")
+    # print(
+    #     [
+    #         (s, s.hours_worked)
+    #         for s in sorted(domains[day][dom][tme], key=lambda s: s.hours_worked)
+    #     ]
+    # )
+    # for stf in sorted(domains[day][dom][tme], key= lambda s: s.hours_worked):
+    # staff_copy = copy.copy(staff)
+    # print('staff_copy', [s.hours_worked for s in staff_copy])
+    # print('original staff', [s.hours_worked for s in staff])
+    # print('domain staff', [s.hours_worked for s in domains[day][dom][tme]])
+
+    # print('sorted staff', [s.hours_worked for s in sorted(staff, key=lambda s:s.hours_worked)])
+    for stf in sorted(staff, key=lambda s: s.hours_worked):
+        # for stf in domains[day][dom][tme]:
+        stf.hours_worked += 4
+        if not stf.is_valid():
+            stf.hours_worked -= 4
+            continue
+        # for stf in valid_staff:
+        # print("cur dom", dom)
+        # other_staff = set(get_other_staff(assignment, dom, day))
+        # if stf.name in other_staff:
+        #     continue
+
+        "clone assignment"
         new_assignment = copy.deepcopy(assignment)
         # print(new_assignment)
         # print("first", to_normal_dict(new_assignment))
         new_assignment[day][dom.department_name][tme].append(stf.name)
+        # print(day, dom.department_name, tme, stf)
+        # print(new_assignment)
+        # time.sleep(10)
+
+        # for other_tme in ['morning', 'afternoon', 'evening']:
+        #     # if other_tme != tme:
+        #     if (day, dom, other_tme) in valid_domains:
+        #         new_assignment[day][dom.department_name][other_tme].append(stf.name)
         # print("Trying", new_assignment, "\n")
         # print(
         #     f"Second -> New Assignment of {stf} to ({dom}, {tme}) -> {to_normal_dict(new_assignment)}",
@@ -410,7 +521,7 @@ def backtrack(assignment):
         # print(
         #     "checking validity...\nIs Valid? ",
         # )
-        stf.hours_worked += 4
+        # stf.hours_worked += 4
         if is_valid(new_assignment, dom, tme, stf, day):
             # seen[dom][stf.name] += 4
             # print(
@@ -446,7 +557,7 @@ if __name__ == "__main__":
             for day in DAY_OF_WEEK
         }
         res = to_normal_dict(backtrack(assignment))
-        print(json.dumps(res, indent=2))
+        # print(json.dumps(res, indent=2))
         # print(json.dumps(to_normal_dict(assignment), indent=4))
         print([(stf.name, stf.hours_worked) for stf in staff], "\n")
         # print(sum(stf.hours_worked for stf in staff)/ len(staff))

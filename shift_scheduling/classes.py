@@ -26,7 +26,7 @@ class Staff:
         position: str,
         shift_exclusion_list: list = [],
         day_exclusion_list: list = [],
-        contract_hours: int = 30,
+        contract_hours: int = 40,
     ):
         self.name = name.lower()
         self.position = position.lower()
