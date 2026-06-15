@@ -1,13 +1,13 @@
 import random
 
-# Define classes for Departments and Staff
+# Define classes for DepartmentDatas and StaffData
 
 # Some departments should only require staff during specific shifts like only evenings or afternoons and evenings or morning, afternoon and evenings
 
 # Some staff members have availability days
 
 
-class Staff:
+class StaffData:
     """
     Each staff has a
     - Name
@@ -18,17 +18,25 @@ class Staff:
 
     # i'm to add staff availability, i.e some staff can only work on some certain days
 
-    staff_members: list["Staff"] = []
+    """Two different people can have same name"""
+    staff_members: list["StaffData"] = []
+    next_id = 1
 
     def __init__(
         self,
         name: str,
-        position: str,
+        id: int | None = None,
+        position: str = "associate",
         shift_exclusion_list: list = [],
         day_exclusion_list: list = [],
         contract_hours: int = 40,
     ):
-        self.name = name.lower()
+        self.id = id
+        if not self.id:
+            self.id = StaffData.next_id
+            StaffData.next_id += 1
+        # self.name = name.lower()
+        self.name = name
         self.position = position.lower()
         self.contract_hours = contract_hours
         self.min_hours = 8
@@ -37,6 +45,10 @@ class Staff:
         self.day_exclusion_list = day_exclusion_list
         self.working = False
 
+        if not self._is_feasible():
+            raise ValueError(
+                "Contract hours exceed the staff member's available working hours."
+            )
         self.__class__.staff_members.append(self)
 
     @classmethod
@@ -55,8 +67,16 @@ class Staff:
         # return self.min_hours <= self.hours_worked <= self.contract_hours
         return self.hours_worked <= self.contract_hours
 
+    def _is_feasible(self):
+        daily_hours = 12 - (4 * len(self.shift_exclusion_list))
+        available_days = 7 - len(self.day_exclusion_list)
+
+        avail_hours = daily_hours * available_days
+        # the cx contract hours should be more than the available hours they can work
+        return self.contract_hours <= avail_hours
+
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, Staff):
+        if isinstance(other, StaffData):
             return self.name == other.name
         return NotImplemented
 
@@ -70,33 +90,43 @@ class Staff:
         return hash(self.name)
 
 
-class Department:
+class DepartmentData:
     """
     Each department has a
     - Name
     - Maximum number of staff at every given shift
     """
 
-    departments = []
+    departments: list["DepartmentData"] = []
+    next_id = 1
 
     def __init__(
         self,
         department_name: str,
         max_num_staff: int,
         min_num_staff: int = 1,
+        id: int = None,
     ):
+        self.id = id
+        if not self.id:
+            self.id = DepartmentData.next_id
+            DepartmentData.next_id += 1
         self.department_name = department_name.lower()
-        self.__class__.departments.append(self)
         self.max_num_staff = max_num_staff
         self.min_num_staff = min_num_staff
         self.priority = ["afternoon", "evening"]
         self.staff_list = []
+        if self.department_name in [
+            d.department_name for d in DepartmentData.departments
+        ]:
+            raise ValueError("Department name exists already.")
+        self.__class__.departments.append(self)
 
     @classmethod
     def list_departments(cls):
         return cls.departments
 
-    def add_staff(self, staff: Staff):
+    def add_staff(self, staff: StaffData):
         self.staff_list.append(staff)
 
     def is_valid(self, num_staff):
@@ -108,12 +138,13 @@ class Department:
 
     def __str__(self):
         return self.department_name
+        # return self.id
 
     def __repr__(self) -> str:
         return self.department_name
 
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, Department):
+        if isinstance(other, DepartmentData):
             return self.department_name == other.department_name
         return NotImplemented
 
