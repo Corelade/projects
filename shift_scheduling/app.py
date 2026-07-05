@@ -4,6 +4,7 @@ import random
 from collections import defaultdict
 import json
 from itertools import zip_longest
+from typing import Literal
 
 shift_time = ["morning", "afternoon", "evening"]
 DAY_OF_WEEK = [
@@ -32,7 +33,7 @@ def is_feasibile(
 ):
     """
     This function checks if the current departments and staff available will yield a result
-    
+
     1 dept -> 1 person - True
     1 dept -> 2 persons - True
     1 dept -> 3 persons - True
@@ -79,14 +80,12 @@ def is_feasibile(
         print(
             f"Required Hours -> '{required_hours}' is more than Available Capacity -> '{available_capacity}'"
         )
-        # return {
-        #     'success': False,
-        #     'message': message
-        # }
         return False
 
     if required_hours < min_required_hours:
-        print(f"Number of required hours is greater than number of available hours")
+        print(
+            f"Required Hours -> '{required_hours}' is greater than number of available hours"
+        )
         return False
 
     for day in DAY_OF_WEEK:
@@ -118,7 +117,6 @@ def is_feasibile(
         )
         return False
 
-    # print('unknown')
     return True
 
 
@@ -133,14 +131,6 @@ def get_valid_staff(staff_list: list[StaffData]):
     if not available_staff:
         return None
 
-    # weights = []
-
-    # for stf in available_staff:
-    #     # fewer hours → higher weight
-    #     weight = 1 / (stf.hours_worked + 1)
-    #     weights.append(weight)
-
-    # return random.choices(available_staff, weights=weights, k=1)[0]
     return available_staff
 
 
@@ -165,10 +155,10 @@ def get_other_staff(
 def is_valid(
     assignment: dict,
     domain: DepartmentData,
-    tme,
+    tme: Literal['morning', 'afternoon', 'evening'],
     staff: StaffData,
     day: str,
-    user_id="id",
+    use_id: bool = True,
 ):
     # checks to see if an assigment is valid
 
@@ -204,7 +194,7 @@ def is_valid(
     #     assignment[domain.department_name][tme].count(staff.id),
     #     "\n",
     # )
-    if user_id == "id":
+    if use_id:
         staff_count = assignment[day][domain.department_name][tme].count(staff.id)
     else:
         staff_count = assignment[day][domain.department_name][tme].count(staff.name)
@@ -231,8 +221,8 @@ def is_valid(
     #     staff.id in assigned_staff_arr,
     # )
     # print(f"Assigned StaffData Array -> {assigned_staff_arr}", "\n")
-    'if user_id == "id"'
-    value = staff.id if user_id == "id" else staff.name
+    'if use_id == True'
+    value = staff.id if use_id else staff.name
     if value in assigned_staff_arr:
         # print(f"Error -> {staff} already in assigned_staff_arr", "\n")
         return False
@@ -251,7 +241,7 @@ def backtrack(
     departments: list[DepartmentData],
     staff: list[StaffData],
     domains,
-    user_id="id",
+    use_id: bool = True,
 ):
     # print([(st, st.hours_worked) for st in staff])
     # before running the main function, check if there is a solution
@@ -408,7 +398,7 @@ def backtrack(
         new_assignment = copy.deepcopy(assignment)
         # print(new_assignment)
         # print("first", to_normal_dict(new_assignment))
-        if user_id == "id":
+        if use_id:
             new_assignment[day][dom.department_name][tme].append(stf.id)
         else:
             new_assignment[day][dom.department_name][tme].append(stf.name)
@@ -430,14 +420,14 @@ def backtrack(
         #     "checking validity...\nIs Valid? ",
         # )
         # stf.hours_worked += 4
-        if is_valid(new_assignment, dom, tme, stf, day, user_id=user_id):
+        if is_valid(new_assignment, dom, tme, stf, day, use_id=use_id):
             # seen[dom][stf.id] += 4
             # print(
             #     f"New Assignment of {stf} to ({dom}, {tme}) -> {to_normal_dict(new_assignment)}",
             #     "\n",
             # )
             # time.sleep(5)
-            result = backtrack(new_assignment, departments, staff, domains, user_id)
+            result = backtrack(new_assignment, departments, staff, domains, use_id)
             if result:
                 return result
         stf.hours_worked -= 4
@@ -453,7 +443,7 @@ def backtrack(
 
 
 # if __name__ == "__main__":
-def main(departments: list[DepartmentData], staff: list[StaffData], user_id="id"):
+def main(departments: list[DepartmentData], staff: list[StaffData], use_id=True):
     for stf in staff:
         stf.hours_worked = 0
 
@@ -478,7 +468,7 @@ def main(departments: list[DepartmentData], staff: list[StaffData], user_id="id"
             for day in DAY_OF_WEEK
         }
         res = to_normal_dict(
-            backtrack(assignment, departments, staff, domains, user_id)
+            backtrack(assignment, departments, staff, domains, use_id)
         )
         return res
         # print(json.dumps(to_normal_dict(assignment), indent=4))
@@ -744,8 +734,8 @@ if __name__ == "__main__":
             for key, val in prompt_dict.items():
                 print(val)
             action_prompt = input("\nWhat would you like to do? ")
-            if action_prompt == '':
-                print('')
+            if action_prompt == "":
+                print("")
                 continue
             if action_prompt not in prompt_dict:
                 print("Invalid Action!!! Try Again")
@@ -770,8 +760,8 @@ if __name__ == "__main__":
                 # while True:
                 # if create_dept():
                 create_dept()
-                    #     break
-                    # break
+                #     break
+                # break
                 print("\n")
 
             elif action_prompt == "3":
@@ -840,7 +830,9 @@ if __name__ == "__main__":
                         print("\n")
                         break
 
-                    new_name, contract_hours, days_unavailable, shifts_unavailable = result
+                    new_name, contract_hours, days_unavailable, shifts_unavailable = (
+                        result
+                    )
 
                     if new_name:
                         staff_instance.name = new_name
@@ -848,7 +840,9 @@ if __name__ == "__main__":
                         if days_unavailable:
                             staff_instance.day_exclusion_list = list(days_unavailable)
                         if shifts_unavailable:
-                            staff_instance.shift_exclusion_list = list(shifts_unavailable)
+                            staff_instance.shift_exclusion_list = list(
+                                shifts_unavailable
+                            )
                         print("\n")
                         break
 
@@ -886,7 +880,7 @@ if __name__ == "__main__":
 
             elif action_prompt == "7":
                 res = main(departments, staff)
-                res_name = main(departments, staff, user_id="name")
+                res_name = main(departments, staff, use_id=False)
                 # print("")
                 # print(res)
                 # print("")
@@ -936,6 +930,6 @@ if __name__ == "__main__":
 #         }
 #         for day in DAY_OF_WEEK
 #     }
-#     res = main(departments, staff, user_id='id')
+#     res = main(departments, staff, use_id=True)
 #     print(res)
 #     # print(json.dumps(res, indent=2))

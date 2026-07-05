@@ -125,10 +125,9 @@ def create_schedule():
         staff_list, department_list = initialize()
         # print(staff_list, department_list)
         # print('')
-        res = main(department_list, staff_list, user_id="name")
+        res = main(department_list, staff_list, use_id=False)
 
         if res:
-            # if user_id == 'id' or 'name'
             staff_map = {
                 staff.first_name: staff for staff in db.exec(select(Staff)).all()
             }

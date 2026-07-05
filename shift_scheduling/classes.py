@@ -1,10 +1,16 @@
 import random
 
-# Define classes for DepartmentDatas and StaffData
+# TODO
+"""
+ - Define classes for DepartmentData and StaffData
+ - Staff members have availability days
+ - Some Departments should only require staff during specific shifts like only evenings or afternoons and evenings or morning, afternoon and evenings
+"""
 
-# Some departments should only require staff during specific shifts like only evenings or afternoons and evenings or morning, afternoon and evenings
-
-# Some staff members have availability days
+# NOTE
+"""
+     - Two different staff can have same name 
+"""
 
 
 class StaffData:
@@ -12,13 +18,10 @@ class StaffData:
     Each staff has a
     - Name
     - Contracted hours
-    - Position (Associate, Management, Team Lead, Loss Protection)
-    - Availability (To Be Implemented)
+    - Availability
+    - Position (Associate, Management, Team Lead, Loss Protection) To Be Fully Implemented
     """
 
-    # i'm to add staff availability, i.e some staff can only work on some certain days
-
-    """Two different people can have same name"""
     staff_members: list["StaffData"] = []
     next_id = 1
 
@@ -32,11 +35,8 @@ class StaffData:
         contract_hours: int = 40,
     ):
         self.id = id
-        if not self.id:
-            self.id = StaffData.next_id
-            StaffData.next_id += 1
-        # self.name = name.lower()
-        self.name = name
+        # self.name = name
+        self.name = name.lower()
         self.position = position.lower()
         self.contract_hours = contract_hours
         self.min_hours = 8
@@ -49,6 +49,11 @@ class StaffData:
             raise ValueError(
                 "Contract hours exceed the staff member's available working hours."
             )
+
+        if not self.id:
+            self.id = StaffData.next_id
+            StaffData.next_id += 1
+
         self.__class__.staff_members.append(self)
 
     @classmethod
@@ -68,17 +73,28 @@ class StaffData:
         return self.hours_worked <= self.contract_hours
 
     def _is_feasible(self):
+        """
+        Function to check if the initialization parameters are valid
+
+         - Daily hours is the number of hours/shifts that a Staff can do daily: 12 is the maxinum num of hours a Staff can do daily (4 hour per shift * 3 shifts)
+         - Available days is to check the days a Staff is available to work: 7 is the number of days in a week
+        """
         daily_hours = 12 - (4 * len(self.shift_exclusion_list))
         available_days = 7 - len(self.day_exclusion_list)
 
         avail_hours = daily_hours * available_days
-        # the cx contract hours should be more than the available hours they can work
-        return self.contract_hours <= avail_hours
+
+        # the contract hours should be more than the available hours they can work
+        return (
+            self.contract_hours <= avail_hours
+            and avail_hours != 0
+            and self.contract_hours != 0
+        )
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, StaffData):
-            return self.name == other.name
-        return NotImplemented
+            return self.id == other.id
+        raise ValueError("Obects are of different types. Requires same obect of type StaffData")
 
     def __str__(self):
         return self.name
@@ -108,9 +124,6 @@ class DepartmentData:
         id: int = None,
     ):
         self.id = id
-        if not self.id:
-            self.id = DepartmentData.next_id
-            DepartmentData.next_id += 1
         self.department_name = department_name.lower()
         self.max_num_staff = max_num_staff
         self.min_num_staff = min_num_staff
@@ -120,6 +133,10 @@ class DepartmentData:
             d.department_name for d in DepartmentData.departments
         ]:
             raise ValueError("Department name exists already.")
+
+        if not self.id:
+            self.id = DepartmentData.next_id
+            DepartmentData.next_id += 1
         self.__class__.departments.append(self)
 
     @classmethod
@@ -146,7 +163,9 @@ class DepartmentData:
     def __eq__(self, other: object) -> bool:
         if isinstance(other, DepartmentData):
             return self.department_name == other.department_name
-        return NotImplemented
+        raise ValueError(
+            "Obects are of different types. Requires same obect of type DepartmentData"
+        )
 
     def __hash__(self) -> int:
         return hash(self.department_name)
