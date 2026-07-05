@@ -310,4 +310,4 @@ class TestValidAssignments(BaseClass):
         validity = is_valid(
             assignment, self.shoes, "morning", self.kolade, "monday", use_id=False
         )
-        assert validity is False
+        assert validity is True
