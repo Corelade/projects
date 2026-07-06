@@ -10,6 +10,7 @@ class StaffCreateRequest(BaseModel):
     last_name: str
     position: str
     contract_hours: int
+    email: EmailStr
     shift_exclusions: list[Literal["morning", "afternoon", "evening"]]
     day_exclusions: list[
         Literal[
@@ -36,6 +37,7 @@ class StaffRead(SQLModel):
     last_name: str
     position: str
     contract_hours: int
+    email: EmailStr
     exclusions: list[ExclusionRead] = []
 
 

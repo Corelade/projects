@@ -23,7 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 *.env
-alembic/
-alembic.ini
+# alembic/
+# alembic.ini
 shiftPro
 decorators.py

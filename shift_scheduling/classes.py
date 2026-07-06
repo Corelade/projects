@@ -44,6 +44,10 @@ class StaffData:
         self.shift_exclusion_list = shift_exclusion_list
         self.day_exclusion_list = day_exclusion_list
         self.working = False
+        
+        # contract hours must be at least 8 hours
+        if self.contract_hours < 8:
+            raise ValueError("Contract hours must be at least 8 hours")
 
         if not self._is_feasible():
             raise ValueError(

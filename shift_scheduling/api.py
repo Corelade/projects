@@ -39,7 +39,7 @@ app.add_middleware(
 
 @app.get("/", response_model=ScheduleResponse)
 def home(db: SessionDep):
-    SHIFTS = ["Morning", "Afternoon", "Evening"]
+    SHIFTS = ["morning", "afternoon", "evening"]
 
     grouped = defaultdict(
         lambda: {
@@ -59,7 +59,7 @@ def home(db: SessionDep):
     for s in schedule_list:
         day = s.week_day.capitalize()
         dept = s.department.name.capitalize()
-        shift = s.time.capitalize()
+        shift = s.time
 
         grouped[day]["date"] = get_date_from_week(s.week.week_start, day)
 
@@ -84,27 +84,34 @@ def home(db: SessionDep):
     }
 
 
-@app.post("/staff")
-def create_staff(data: StaffCreateRequest, db: SessionDep) -> Staff:
-
-    # might want to make this try and except because the is_feasible should call automatically during initialization
-    sd = StaffData(
-        name=data.first_name,
-        id=None,
-        shift_exclusion_list=data.shift_exclusions,
-        day_exclusion_list=data.day_exclusions,
-    )
-    if not sd.is_feasible():
-        raise HTTPException(status_code=400, detail="Staff constraints not feasible")
+@app.post("/create-staff")
+def create_staff(data: StaffCreateRequest, db: SessionDep) -> StaffRead:
+    try:
+        StaffData(
+            name=data.first_name,
+            id=None,
+            shift_exclusion_list=data.shift_exclusions,
+            day_exclusion_list=data.day_exclusions,
+            contract_hours=data.contract_hours,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     staff = Staff(
         first_name=data.first_name,
         last_name=data.last_name,
         position=data.position,
         contract_hours=int(data.contract_hours),
+        email=data.email,
     )
-    db.add(staff)
-    db.commit()
+
+    try:
+        db.add(staff)
+        db.commit()
+    except IntegrityError as e:
+        db.rollback()
+        raise HTTPException(status_code=400, detail=f'Email already exists: {str(e)}')
+
     db.refresh(staff)
 
     exclusions = []
@@ -125,7 +132,7 @@ def create_staff(data: StaffCreateRequest, db: SessionDep) -> Staff:
     return staff
 
 
-@app.get("/staff", response_model=list[StaffRead])
+@app.get("/list_staff", response_model=list[StaffRead])
 def list_staff(db: SessionDep):
     statement = select(Staff).options(selectinload(Staff.exclusions))
 
@@ -133,15 +140,7 @@ def list_staff(db: SessionDep):
     return staff_list
 
 
-@app.get("/departments", response_model=list[Department])
-def list_departments(db: SessionDep):
-    statement = select(Department)
-    department_list = db.exec(statement).all()
-
-    return department_list
-
-
-@app.post("/departments", response_model=Department)
+@app.post("/create_department", response_model=Department)
 def create_department(data: DepartmentCreateRequest, db: SessionDep):
     department = Department(
         name=data.name.lower(), min_staff=data.min_staff, max_staff=data.max_staff
@@ -156,3 +155,11 @@ def create_department(data: DepartmentCreateRequest, db: SessionDep):
         raise HTTPException(status_code=400, detail="Department already exists")
 
     return department
+
+
+@app.get("/departments", response_model=list[Department])
+def list_departments(db: SessionDep):
+    statement = select(Department)
+    department_list = db.exec(statement).all()
+
+    return department_list

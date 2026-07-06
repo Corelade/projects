@@ -167,5 +167,6 @@ def create_schedule():
 
 
 # week = get_week()
-res = create_schedule()
-print_schedule(res)
+if __name__ == '__main':
+    res = create_schedule()
+    print_schedule(res)
