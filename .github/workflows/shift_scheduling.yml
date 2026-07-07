@@ -15,9 +15,19 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  test:
 
     runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          db_username: ${{secrets.DB_USER}}
+          db_password: ${{secrets.DB_PASSWORD}}
+          db_name: ${{secrets.DB_NAME}}
+        ports:
+          - 3306:3306
 
     defaults:
       run:
