@@ -23,8 +23,9 @@ jobs:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_ROOT_PASSWORD: test_password
-          MYSQL_DATABASE: test_db
+          MYSQL_ROOT_PASSWORD: root_password
+          MYSQL_DATABASE: ${{secrets.DB_NAME}}
+          MYSQL_USER: test_user
           MYSQL_PASSWORD: test_password
         ports:
           - 3306:3306
@@ -46,13 +47,8 @@ jobs:
         pip install -r requirements.txt;
     - name: Test with pytest
       env:
-        DB_USER: root
+        DB_USER: test_user
         DB_PASSWORD: test_password
-        DB_TEST_NAME: test_db
-        # DB_HOST: 127.0.0.1
-        # DB_USER: ${{ secrets.DB_USER }}
-        # DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-        # DB_NAME: ${{ secrets.DB_NAME }}
-        # DB_HOST: 127.0.0.1
+        DB_TEST_NAME: ${{ secrets.DB_NAME }}
       run: |
         python3 -m pytest
