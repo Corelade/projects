@@ -19,7 +19,6 @@ TEST_DB_URL = URL.create(
 
 test_engine = create_engine(TEST_DB_URL, echo=False)
 
-
 def test_db_session():
     with Session(test_engine) as session:
         yield session
