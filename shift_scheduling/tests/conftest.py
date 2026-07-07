@@ -26,5 +26,4 @@ def test_db_session():
 
 app.dependency_overrides[get_db_session] = test_db_session
 
-
 client = TestClient(app)
