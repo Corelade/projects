@@ -11,13 +11,14 @@ db_name = os.getenv("DB_TEST_NAME")
 
 TEST_DB_URL = URL.create(
     drivername="mysql+pymysql",
-    username='root',
-    password='test_password',
+    username=db_username,
+    password=db_password,
     host="localhost",
-    database='test_db',
+    database=db_name,
 )
 
 test_engine = create_engine(TEST_DB_URL, echo=False)
+
 
 def test_db_session():
     with Session(test_engine) as session:
