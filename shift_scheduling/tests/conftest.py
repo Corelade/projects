@@ -24,7 +24,6 @@ def test_db_session():
     with Session(test_engine) as session:
         yield session
 
-
 app.dependency_overrides[get_db_session] = test_db_session
 
 client = TestClient(app)
