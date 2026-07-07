@@ -24,7 +24,7 @@ jobs:
         image: mysql:8.0
         env:
           MYSQL_ROOT_PASSWORD: root_password
-          MYSQL_DATABASE: ${{secrets.DB_TEST_NAME}}
+          MYSQL_DATABASE: test_db
           MYSQL_USER: test_user
           MYSQL_PASSWORD: test_password
         ports:
@@ -49,6 +49,6 @@ jobs:
       env:
         DB_USER: test_user
         DB_PASSWORD: test_password
-        DB_TEST_NAME: ${{ secrets.DB_TEST_NAME }}
+        DB_TEST_NAME: test_db
       run: |
         python3 -m pytest
