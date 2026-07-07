@@ -17,6 +17,7 @@ TEST_DB_URL = URL.create(
     database='test_db',
 )
 
+
 test_engine = create_engine(TEST_DB_URL, echo=False)
 
 
