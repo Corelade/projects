@@ -155,7 +155,7 @@ def get_other_staff(
 def is_valid(
     assignment: dict,
     domain: DepartmentData,
-    tme: Literal['morning', 'afternoon', 'evening'],
+    tme: Literal["morning", "afternoon", "evening"],
     staff: StaffData,
     day: str,
     use_id: bool = True,
@@ -205,7 +205,7 @@ def is_valid(
         # )
         return False
 
-    if tme in staff.shift_exclusion_list:
+    if tme in staff.shift_exclusion_list or day in staff.day_exclusion_list:
         return False
 
     # one staff can not be in more than one domain
@@ -221,7 +221,7 @@ def is_valid(
     #     staff.id in assigned_staff_arr,
     # )
     # print(f"Assigned StaffData Array -> {assigned_staff_arr}", "\n")
-    'if use_id == True'
+    "if use_id == True"
     value = staff.id if use_id else staff.name
     if value in assigned_staff_arr:
         # print(f"Error -> {staff} already in assigned_staff_arr", "\n")
@@ -244,7 +244,7 @@ def backtrack(
     use_id: bool = True,
 ):
     # print([(st, st.hours_worked) for st in staff])
-    # before running the main function, check if there is a solution
+    # before running the scheduler function, check if there is a solution
     # if not is_feasibile():
     #     return {}
 
@@ -443,7 +443,7 @@ def backtrack(
 
 
 # if __name__ == "__main__":
-def main(departments: list[DepartmentData], staff: list[StaffData], use_id=True):
+def scheduler(departments: list[DepartmentData], staff: list[StaffData], use_id=True):
     for stf in staff:
         stf.hours_worked = 0
 
@@ -467,10 +467,8 @@ def main(departments: list[DepartmentData], staff: list[StaffData], use_id=True)
             }
             for day in DAY_OF_WEEK
         }
-        res = to_normal_dict(
-            backtrack(assignment, departments, staff, domains, use_id)
-        )
-        return res
+        res = backtrack(assignment, departments, staff, domains, use_id)
+        return to_normal_dict(res)
         # print(json.dumps(to_normal_dict(assignment), indent=4))
         # print([(stf.id, stf.hours_worked) for stf in staff], "\n")
         # print(sum(stf.hours_worked for stf in staff)/ len(staff))
@@ -879,8 +877,8 @@ if __name__ == "__main__":
                     continue
 
             elif action_prompt == "7":
-                res = main(departments, staff)
-                res_name = main(departments, staff, use_id=False)
+                res = scheduler(departments, staff)
+                res_name = scheduler(departments, staff, use_id=False)
                 # print("")
                 # print(res)
                 # print("")
@@ -930,6 +928,6 @@ if __name__ == "__main__":
 #         }
 #         for day in DAY_OF_WEEK
 #     }
-#     res = main(departments, staff, use_id=True)
+#     res = scheduler(departments, staff, use_id=True)
 #     print(res)
 #     # print(json.dumps(res, indent=2))

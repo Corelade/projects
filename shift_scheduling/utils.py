@@ -2,7 +2,7 @@ from models import *
 from datetime import date, timedelta
 from sqlmodel import select, Session
 from db import engine
-from app import main, print_schedule
+from app import scheduler, print_schedule
 from classes import StaffData, DepartmentData
 
 
@@ -125,7 +125,7 @@ def create_schedule():
         staff_list, department_list = initialize()
         # print(staff_list, department_list)
         # print('')
-        res = main(department_list, staff_list, use_id=False)
+        res = scheduler(department_list, staff_list, use_id=False)
 
         if res:
             staff_map = {
