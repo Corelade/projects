@@ -19,13 +19,11 @@ class StaffCreateRequest(BaseModel):
             "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"
         ]
     ]
-    
+
     @model_validator(mode="after")
     def validate_hours(self):
         if not (8 <= self.min_hours <= self.contract_hours):
-            raise ValueError(
-                f"min_hours must be between 8 and {self.contract_hours}."
-            )
+            raise ValueError(f"min_hours must be between 8 and {self.contract_hours}.")
 
         return self
 
@@ -64,4 +62,3 @@ class ScheduleItem(BaseModel):
 class ScheduleResponse(BaseModel):
     success: bool
     schedule: dict[str, dict[str, object]]
-    

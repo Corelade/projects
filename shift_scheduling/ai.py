@@ -1,6 +1,6 @@
 from openai import OpenAI, AsyncOpenAI
 from dotenv import load_dotenv
-from app import backtrack, print_schedule, scheduler
+from app import scheduler, print_schedule
 from classes import *
 import json
 from prompt_toolkit import prompt
@@ -20,6 +20,7 @@ class StaffDict(TypedDict):
     shift_exclusion_list: list
     day_exclusion_list: list
     contract_hours: int
+    min_hours: int
     id: int | None = None
 
 
@@ -138,6 +139,11 @@ tools = [
                                 "description": "The number of hours this staff can work in a week. Shouldn't be more than 40",
                                 "default": 40,
                             },
+                            "min_hours": {
+                                "type": "integer",
+                                "description": "The minimum number of hours this staff can work in a week. Shouldn't be more than contract hours",
+                                "default": 8,
+                            },
                         },
                         "required": ["name"],
                         "additionalProperties": False,
@@ -151,7 +157,12 @@ tools = [
             "additionalProperties": False,
             "required": ["departments", "staff"],
         },
-    }
+    },
+    # {
+    #     "type": "function",
+    #     "name": "ai_update_scheduler",
+    #     "description": "A function for updating weekly shift schedules"
+    # }
 ]
 
 

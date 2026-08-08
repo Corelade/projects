@@ -93,6 +93,7 @@ def create_staff(data: StaffCreateRequest, db: SessionDep) -> StaffRead:
             shift_exclusion_list=data.shift_exclusions,
             day_exclusion_list=data.day_exclusions,
             contract_hours=data.contract_hours,
+            min_hours=data.min_hours
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -103,6 +104,7 @@ def create_staff(data: StaffCreateRequest, db: SessionDep) -> StaffRead:
         position=data.position,
         contract_hours=int(data.contract_hours),
         email=data.email,
+        min_hours = data.min_hours
     )
 
     try:

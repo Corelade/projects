@@ -1,7 +1,7 @@
 from sqlmodel import Field, Relationship, SQLModel
 from enum import Enum
 from datetime import date
-from pydantic import EmailStr
+from pydantic import EmailStr, ConfigDict, model_validator
 
 
 class ExclusionType(str, Enum):
@@ -10,13 +10,16 @@ class ExclusionType(str, Enum):
 
 
 class Staff(SQLModel, table=True):
+    model_config = ConfigDict(validate_assignment=True)
+
     id: int | None = Field(primary_key=True, default=None)
     first_name: str
     last_name: str
     email: EmailStr = Field(unique=True)
     position: str = Field(index=True)
     contract_hours: int = Field(default=40)
-    age: int = Field(nullable=True, default=None)
+    min_hours: int = Field(default=8)
+    age: int | None = Field(nullable=True, default=None)
 
     exclusions: list["Exclusion"] = Relationship(back_populates="staff")
     schedules: list["Schedule"] = Relationship(back_populates="staff")

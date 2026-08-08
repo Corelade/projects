@@ -4,7 +4,7 @@ import random
 from collections import defaultdict
 import json
 from itertools import zip_longest
-from typing import Literal
+from typing import Literal, TypedDict
 
 shift_time = ["morning", "afternoon", "evening"]
 DAY_OF_WEEK = [
@@ -16,6 +16,16 @@ DAY_OF_WEEK = [
     "saturday",
     "sunday",
 ]
+
+
+class ShiftAssignments(TypedDict):
+    morning: list[str]
+    afternoon: list[str]
+    evening: list[str]
+
+
+DepartmentAssignments = dict[str, ShiftAssignments]
+AssignmentStruct = dict[str, DepartmentAssignments]
 
 
 def to_normal_dict(d):
@@ -237,10 +247,10 @@ seen = defaultdict(lambda: defaultdict(int))
 
 
 def backtrack(
-    assignment,
+    assignment: AssignmentStruct,
     departments: list[DepartmentData],
     staff: list[StaffData],
-    domains,
+    domains: AssignmentStruct,
     use_id: bool = True,
 ):
     # print([(st, st.hours_worked) for st in staff])
@@ -309,9 +319,10 @@ def backtrack(
             # len(assignment[day][dom.department_name][tme]) < dom.max_num_staff
         )
     ]
+    # print(valid_domains)
 
     """
-    ASSIGNMENT SATISFACTION CHECKS
+    ASSIGNMENT SATISFACTION CHECKS - Start
     """
 
     if (
@@ -326,12 +337,15 @@ def backtrack(
         )
     ):
         # if len(assigned_staff_count) == len(staff):
+        "This just checks if staff has worked min_hours. We can ensure staff minimum hours is set at a certain threshold as well for a stricter assignment"
         if all(st.hours_worked >= st.min_hours for st in staff):
             # if all(st.is_valid() for st in staff):
             return assignment
 
+    if not valid_domains:
+        return None
     """
-    ASSIGNMENT SATISFACTION CHECKS
+    ASSIGNMENT SATISFACTION CHECKS - End
     """
 
     weights = [
@@ -442,6 +456,138 @@ def backtrack(
     return None
 
 
+def update_schedule(
+    assignment: AssignmentStruct,
+    departments: list[DepartmentData],
+    staff: list[StaffData],
+    # domains: AssignmentStruct,
+    use_id: bool = True,
+):
+    """
+    Update Triggers
+    - Staff Removal/Addition // Department Removal/Addition
+    - Department modifications
+    - Change in contract hours
+    - Change in time/day availability TODO
+    """
+    # value = staff.id if use_id else staff.name
+
+    # TODO Breaks when i add new staff and the domains have already been filled
+
+    if not is_feasibile(departments, staff):
+        return None
+    
+    dept_dict = {dept.department_name: dept for dept in departments}
+
+    domains = {
+        day: {
+            department: {tme: [stf for stf in staff] for tme in shift_time}
+            for department in departments
+        }
+        for day in DAY_OF_WEEK
+    }
+
+    "Staff/Department Removal"
+    if not use_id:
+        staff_list = {stf.name: stf for stf in staff}
+        stf_hours_worked_dict = {stf.name: stf.hours_worked for stf in staff}
+        stf_contract_hours_dict = {stf.name: stf.contract_hours for stf in staff}
+    else:
+        staff_list = {stf.id: stf for stf in staff}
+        stf_hours_worked_dict = {stf.id: stf.hours_worked for stf in staff}
+        stf_contract_hours_dict = {stf.id: stf.contract_hours for stf in staff}
+
+    "Change in contract hours - reduction"
+    overassigned_staff = set()
+    for stf, stf_instance in staff_list.items():
+        if stf_instance.hours_worked > stf_instance.contract_hours:
+            overassigned_staff.add(stf)
+
+    # for day in assignment:
+    #     for department in assignment[day]:
+    #         if department not in departments:  # Department Removal
+    #             for tme in assignment[day][department]:
+    #                 for stf in assignment[day][department][tme]:
+    #                     if stf in staff_list:
+    #                         staff_list[stf].hours_worked -= 4
+    #                 del assignment[day][department]
+    #             continue
+    #         for tme in assignment[day][department]:
+    #             for stf in assignment[day][department][tme]:
+    #                 if stf not in staff_list:  # Staff Removal
+    #                     assignment[day][department][tme].remove(stf)
+    #                     continue
+
+    #                 # if staff hours worked is <= contract hours can skip, else remove staff_from assignment
+    #                 if (
+    #                     stf_hours_worked_dict[stf] > stf_contract_hours_dict[stf]
+    #                 ):  # staff hours modification
+    #                     overassigned_staff.add(stf)
+    #                     assignment[day][department][tme].remove(stf)
+
+    new_assignment = {}
+
+    for day, day_departments in assignment.items():
+
+        new_assignment[day] = {}
+
+        for department, times in day_departments.items():
+
+            if department not in dept_dict:
+                continue
+
+            new_assignment[day][department] = {}
+
+            department_instance = dept_dict[department]
+
+            for time, staff_members in times.items():
+
+                "Department Modification"
+                # Should be used in case minimum/maximum number of allowed staff reduces. if minimum staff increases or maximum staff increases, it will be fixed automatically
+                if (department_instance.min_num_staff > len(staff_members)) or (
+                    department_instance.max_num_staff < len(staff_members)
+                ):
+                    filtered_staff = []
+
+                else:
+                    filtered_staff = [
+                        stf
+                        for stf in staff_members
+                        if (stf in staff_list)
+                        and (stf not in overassigned_staff)
+                        and (time not in staff_list[stf].shift_exclusion_list)
+                        and (day not in staff_list[stf].day_exclusion_list)
+                    ]
+
+                # reset hours worked to 0
+                for stf in staff_members:
+                    if stf not in filtered_staff:
+                        staff_list[stf].hours_worked = 0
+
+                new_assignment[day][department][time] = filtered_staff
+
+    # for stf in staff:
+    #     value = stf.id if use_id else stf.name
+    #     if value in overassigned_staff:
+    #         stf.hours_worked = 0
+
+    "Departent Addition"
+    new_depts = [
+        dept.department_name
+        for dept in departments
+        if dept.department_name not in assignment[next(iter(assignment))]
+    ]
+
+    for day in assignment:
+        for dept in new_depts:
+            assignment[day][dept] = {tme: [] for tme in shift_time}
+
+    "Staff addition is done automatically"
+
+    res = backtrack(assignment, departments, staff, domains, use_id=use_id)
+    return to_normal_dict(res)
+
+
 # if __name__ == "__main__":
 def scheduler(departments: list[DepartmentData], staff: list[StaffData], use_id=True):
     for stf in staff:
@@ -459,7 +605,7 @@ def scheduler(departments: list[DepartmentData], staff: list[StaffData], use_id=
         # print("Not Feasible")
         return None
     else:
-        assignment: dict[str, dict[str, dict[str, list]]] = {
+        assignment: AssignmentStruct = {
             day: {
                 dept.department_name: {shift: [] for shift in shift_time}
                 for day, val in domains.items()
@@ -510,424 +656,466 @@ def print_schedule(res):
         print("\n")
 
 
+# if __name__ == "__main__":
+
+#     result = None  # assignment will be assigned to this variable
+
+#     departments: list[DepartmentData] = DepartmentData.list_departments()
+#     staff: list[StaffData] = StaffData.list_staff_members()
+
+#     # while True:
+#     print("Welcome to SchedulePro\n".center(50, " "))
+
+#     print("Menu Items".center(50, " "))
+#     print("-" * 50)
+
+#     prompt_dict = {
+#         "1": "Press 1 to display current departments and staff",
+#         "2": "Press 2 to add new Department",
+#         "3": "Press 3 to add new Staff",
+#         "4": "Press 4 to edit department",
+#         "5": "Press 5 to edit staff",
+#         "6": "Press 6 to delete instance",
+#         "7": "Press 7 to run Scheduler",
+#         "8": "Press 8 to update weekly schedule",
+#     }
+
+#     def create_dept(
+#         id: int = None,
+#         title: str = "Add New Departments (c to cancel)",
+#         create_new_instance: bool = True,
+#     ):
+#         print(f"\n{title}")
+#         department_name = input("Enter Department Name: ").strip().lower()
+#         if department_name == "c":
+#             return None
+#         min_staff = validate_input("Enter Minimum number of staff: ")
+#         if min_staff is None:
+#             return None
+#         max_staff = validate_input("Enter Maximum number of staff: ")
+#         if max_staff is None:
+#             return None
+
+#         if min_staff > max_staff:
+#             print(
+#                 "\nInvalid -> Minimum Number of Staff cannot exceed max number of staff\n"
+#             )
+#             return None
+
+#         if create_new_instance:
+#             try:
+#                 DepartmentData(
+#                     id=id,
+#                     department_name=department_name,
+#                     min_num_staff=min_staff,
+#                     max_num_staff=max_staff,
+#                 )
+#                 return True
+#             except ValueError as e:
+#                 print("\n", str(e))
+
+#         return department_name, min_staff, max_staff
+
+#     def create_staff(
+#         id: int = None,
+#         title: str = "Add New Staff (c to cancel)",
+#         create_new_instance: bool = True,
+#     ):
+#         print(f"\n{title}")
+#         staff_name = input("Enter Staff Name: ").strip().lower()
+#         if staff_name == "c":
+#             return None
+#         while True:
+#             contract_hours = validate_input("Enter contract hours: ")
+#             if contract_hours is None:
+#                 # break
+#                 return None
+#             if not 8 <= contract_hours <= 40:
+#                 print("Contract hours must be at least 8 and at most 40")
+#                 continue
+#             # break
+
+#             day_exclusions = set()
+#             day_availability_prompt = (
+#                 input("Do you have any day you will be unavailable (y/n)? ")
+#                 .strip()
+#                 .lower()
+#             )
+#             if day_availability_prompt == "c":
+#                 return True
+#             if day_availability_prompt == "y":
+#                 print(f"\nWhat days are you unavailable -> {(DAY_OF_WEEK)}? ")
+#                 while True:
+#                     unavailable_day = input("Enter day: ").strip().lower()
+#                     if unavailable_day == "c":
+#                         break
+#                     if unavailable_day not in DAY_OF_WEEK:
+#                         print("Invalid day")
+#                     else:
+#                         day_exclusions.add(unavailable_day)
+
+#                     cont = input("Add another day (y/n)? ")
+#                     if cont == "y":
+#                         continue
+#                     break
+#             elif day_availability_prompt == "n":
+#                 pass
+#             else:
+#                 print("Invalid Response")
+
+#             shift_exclusions = set()
+#             shift_availability_prompt = (
+#                 input("Do you have any shift you will be unavailable (y/n)? ")
+#                 .strip()
+#                 .lower()
+#             )
+#             if shift_availability_prompt == "c":
+#                 return None
+#             if shift_availability_prompt == "y":
+#                 print(f"\nWhat shifts are you unavailable -> {(shift_time)}? ")
+#                 while True:
+#                     unavailable_shift = input("Enter shift: ").strip().lower()
+#                     if unavailable_shift == "c":
+#                         break
+#                     if unavailable_shift not in shift_time:
+#                         print("Invalid shift")
+#                     else:
+#                         shift_exclusions.add(unavailable_shift)
+
+#                     cont = input("Add another shift (y/n)? ")
+#                     if cont == "y":
+#                         continue
+#                     break
+
+#                 break
+#             elif shift_availability_prompt == "n":
+#                 break
+#             else:
+#                 print("Invalid Response")
+#                 break
+
+#         if create_new_instance:
+#             try:
+#                 StaffData(
+#                     id=id,
+#                     name=staff_name,
+#                     contract_hours=contract_hours,
+#                     shift_exclusion_list=list(shift_exclusions),
+#                     day_exclusion_list=list(day_exclusions),
+#                 )
+#             except ValueError as e:
+#                 print("\nInvalid User ->", str(e))
+#                 print("")
+
+#         return staff_name, contract_hours, day_exclusions, shift_exclusions
+
+#     def draw_table(table: str) -> str:
+#         print("-" * 42)
+#         if table == "department":
+#             print(f"{'| ID':<20}|{'Department Name':^20}|")
+#             print("-" * 42)
+#             for department in departments:
+#                 print(str(department.id).ljust(20, " "), end="")
+#                 print(str(department).center(20, " "))
+#         else:
+#             print(f"{'| ID':<20}|{'Staff Name':^20}|")
+#             print("-" * 42)
+#             for staff_member in staff:
+#                 print(str(staff_member.id).ljust(20, " "), end="")
+#                 print(str(staff_member).center(20, " "))
+
+#         print("\n")
+
+#     def select_department(action: str = "edit"):
+#         dept_prompt = input(
+#             f"Enter ID or Name of department to {action} (c to cancel): "
+#         )
+#         if dept_prompt.strip().lower() == "c":
+#             return None
+#         if dept_prompt.isnumeric():
+#             dept_id = int(dept_prompt)
+#             dept = [
+#                 department for department in departments if department.id == dept_id
+#             ]
+#         else:
+#             dept_name = dept_prompt.strip().lower()
+#             dept = [
+#                 department
+#                 for department in departments
+#                 if department.department_name == dept_name
+#             ]
+
+#         if dept:
+#             return dept[0]
+#         print("Department does not exist")
+#         return None
+
+#     def select_staff(action: str = "edit"):
+#         staff_prompt = input(f"Enter ID or Name of staff to {action}: ")
+#         if staff_prompt.strip().lower() == "c":
+#             return None
+#         if staff_prompt.isnumeric():
+#             staff_id = int(staff_prompt)
+#             staff_instance_arr = [
+#                 staff_member for staff_member in staff if staff_member.id == staff_id
+#             ]
+#         else:
+#             staff_name = staff_prompt.strip().lower()
+#             staff_instance_arr = [
+#                 staff_member
+#                 for staff_member in staff
+#                 if staff_member.name == staff_name
+#             ]
+#         if staff_instance_arr:
+#             staff_instance = staff_instance_arr[0]
+#             print(
+#                 f"\nStaff Name -> {staff_instance.name}\nContract Hours -> {staff_instance.contract_hours}\nDays Unavailable -> {staff_instance.day_exclusion_list}\nShifts Unavailable -> {staff_instance.shift_exclusion_list}\n"
+#             )
+#             return staff_instance
+
+#         print("Staff does not exist")
+#         return None
+
+#     while True:
+#         # while True:
+#         try:
+#             for key, val in prompt_dict.items():
+#                 print(val)
+#             action_prompt = input("\nWhat would you like to do? ")
+#             if action_prompt == "":
+#                 print("")
+#                 continue
+#             if action_prompt not in prompt_dict:
+#                 print("Invalid Action!!! Try Again")
+#                 continue
+#             # break
+
+#             if action_prompt == "1":
+#                 print("\nDisplay current Departments and Staff -> ")
+#                 print("-" * 42)
+#                 print(f"{'| Departments':<20}|{'Staff':^20}|")
+#                 print("-" * 42)
+
+#                 for department, staff_member in zip_longest(
+#                     departments, staff, fillvalue=""
+#                 ):
+#                     print(str(department).ljust(20, " "), end="")
+#                     print(str(staff_member).center(20, " "))
+
+#                 print("\n")
+
+#             elif action_prompt == "2":
+#                 # while True:
+#                 # if create_dept():
+#                 create_dept()
+#                 #     break
+#                 # break
+#                 print("\n")
+
+#             elif action_prompt == "3":
+#                 while True:
+#                     if create_staff():
+#                         break
+#                     break
+#                 print("\n")
+
+#             elif action_prompt == "4":
+#                 draw_table("department")
+
+#                 if not departments:
+#                     print("Maybe start with creating departments\n")
+#                     continue
+
+#                 print("Edit Department by Name or ID\n")
+
+#                 while True:
+#                     dept = select_department()
+#                     if dept is None:
+#                         break
+#                     if dept:
+#                         print(
+#                             f"\nDepartment Name -> {dept.department_name}\nMinimum Number of Staff -> {dept.min_num_staff}\nMaximum Number of Staff -> {dept.max_num_staff}"
+#                         )
+#                         while True:
+#                             result = create_dept(
+#                                 title="Edit Department (c to cancel)",
+#                                 create_new_instance=False,
+#                             )
+#                             if result is None:
+#                                 break
+#                             new_name, new_min, new_max = result
+#                             if new_name:
+#                                 dept.department_name = new_name
+#                                 dept.min_num_staff = new_min
+#                                 dept.max_num_staff = new_max
+#                                 break
+
+#                             print("\n")
+#                     else:
+#                         print("Department does not exist")
+#                         continue
+
+#             elif action_prompt == "5":
+#                 draw_table("staff")
+
+#                 if not staff:
+#                     print("No Staff available\n")
+#                     continue
+
+#                 print("Edit Staff by Name or ID\n")
+
+#                 while True:
+#                     staff_instance = select_staff()
+#                     if staff_instance is None:
+#                         break
+#                     break
+
+#                 while True:
+#                     result = create_staff(
+#                         title="Edit Staff (c to cancel)", create_new_instance=False
+#                     )
+#                     if result is None:
+#                         print("\n")
+#                         break
+
+#                     new_name, contract_hours, days_unavailable, shifts_unavailable = (
+#                         result
+#                     )
+
+#                     if new_name:
+#                         staff_instance.name = new_name
+#                         staff_instance.contract_hours = contract_hours
+#                         if days_unavailable:
+#                             staff_instance.day_exclusion_list = list(days_unavailable)
+#                         if shifts_unavailable:
+#                             staff_instance.shift_exclusion_list = list(
+#                                 shifts_unavailable
+#                             )
+#                         print("\n")
+#                         break
+
+#                     print("\n")
+
+#             elif action_prompt == "6":
+#                 delete_prompt = validate_input(
+#                     "1 to delete Department, 2 to delete Staff (c to cancel): "
+#                 )
+#                 if delete_prompt is None:
+#                     continue
+
+#                 elif delete_prompt == 1:
+#                     draw_table("department")
+#                     dept = select_department(action="delete")
+#                     if dept is None:
+#                         print("\n")
+#                         continue
+#                     else:
+#                         DepartmentData.departments.remove(dept)
+#                         print("\n")
+#                 elif delete_prompt == 2:
+#                     draw_table("staff")
+#                     staff_instance = select_staff(action="delete")
+#                     if staff_instance is None:
+#                         print("\n")
+#                         continue
+#                     else:
+#                         StaffData.staff_members.remove(staff_instance)
+#                         print("\n")
+
+#                 else:
+#                     print("Invalid Response")
+#                     continue
+
+#             elif action_prompt == "7":
+#                 # TODO ask if to use id or not - default to name
+#                 # res = scheduler(departments, staff)
+#                 scheduler_result = scheduler(departments, staff, use_id=False)
+#                 # print("")
+#                 # print(res)
+#                 # print("")
+#                 # print(res_name)
+#                 if scheduler_result:
+#                     print("")
+#                     print_schedule(scheduler_result)
+
+#             elif action_prompt == "8":
+#                 # TODO this will default for using staff name
+#                 if not scheduler_result:
+#                     print("\nNo schedule generated\n")
+#                     continue
+
+#                 updated_result = update_schedule(
+#                     scheduler_result, departments, staff, use_id=False
+#                 )
+#                 if updated_result:
+#                     print_schedule(updated_result)
+#                 else:
+#                     print(
+#                         "Can not update currently existing schedule. All departments have been filled\n"
+#                     )
+
+#             else:
+#                 print("Invalid Prompt\n")
+
+#         except KeyboardInterrupt:
+#             quit()
+
 if __name__ == "__main__":
     departments: list[DepartmentData] = DepartmentData.list_departments()
     staff: list[StaffData] = StaffData.list_staff_members()
 
-    # while True:
-    print("Welcome to SchedulePro\n".center(50, " "))
+    # create departments
+    # ladies = DepartmentData("ladies", 2, min_num_staff=2)
+    # cashier = DepartmentData("cashier", 5, 2)
+    shoes = DepartmentData("shoes", 1)
+    home = DepartmentData("home", 2)
 
-    print("Menu Items".center(50, " "))
-    print("-" * 50)
+    # create staff
+    kolade = StaffData(
+        "kolade",
+        position="associate",
+        shift_exclusion_list=["evening"],
+        contract_hours=20,
+    )
+    motun = StaffData("motun", position="associate")
+    core = StaffData("core", position="associate", contract_hours=20)
+    kunle = StaffData("kunle", position="associate")
+    dara = StaffData("dara", position="associate")
+    lanre = StaffData("lanre", position="associate")
+    # tayo = StaffData("tayo", position="associate")
+    loli = StaffData("loli", position="associate")
+    shem = StaffData("shem", position="associate")
+    riri = StaffData("riri", position="associate")
 
-    prompt_dict = {
-        "1": "Press 1 to display current departments and staff",
-        "2": "Press 2 to add new Department",
-        "3": "Press 3 to add new Staff",
-        "4": "Press 4 to edit department",
-        "5": "Press 5 to edit staff",
-        "6": "Press 6 to delete instance",
-        "7": "Press 7 to run Scheduler",
+    domains = {department: staff for department in departments}
+
+    domains = {
+        day: {
+            department: {
+                tme: [stf.name for stf in staff] for tme in shift_time
+            }
+            for department in departments
+        }
+        for day in DAY_OF_WEEK
     }
+    # print(json.dumps(to_normal_dict(domains), indent=4))
+    res = scheduler(departments, staff, use_id=False)
 
-    def create_dept(
-        id: int = None,
-        title: str = "Add New Departments (c to cancel)",
-        create_new_instance: bool = True,
-    ):
-        print(f"\n{title}")
-        department_name = input("Enter Department Name: ").strip().lower()
-        if department_name == "c":
-            return None
-        min_staff = validate_input("Enter Minimum number of staff: ")
-        if min_staff is None:
-            return None
-        max_staff = validate_input("Enter Maximum number of staff: ")
-        if max_staff is None:
-            return None
+    # tayo = StaffData("tayo", position="associate")
+    # # maybe change the below for the class to have methods to update the shift and day availability
+    # kunle.day_exclusion_list = ["monday", "friday"]
+    # kunle.hours_worked = 20
+    # lanre.shift_exclusion_list = ["morning"]
 
-        if min_staff > max_staff:
-            print(
-                "\nInvalid -> Minimum Number of Staff cannot exceed max number of staff\n"
-            )
-            return None
+    # print(json.dumps(res, indent=2))
+    if res:
+        print_schedule(res)
+        # updated_res = update_schedule(res, departments, staff, use_id=False)
+        # if updated_res:
+            # print(json.dumps(updated_res, indent=4))
+        #     print("\nUpdated Schedule\n".center(50, "-"))
+        #     print_schedule(updated_res)
+        # else:
+        #     print("Can't update existing schedule as all departments filled")
 
-        if create_new_instance:
-            try:
-                DepartmentData(
-                    id=id,
-                    department_name=department_name,
-                    min_num_staff=min_staff,
-                    max_num_staff=max_staff,
-                )
-                return True
-            except ValueError as e:
-                print("\n", str(e))
-
-        return department_name, min_staff, max_staff
-
-    def create_staff(
-        id: int = None,
-        title: str = "Add New Staff (c to cancel)",
-        create_new_instance: bool = True,
-    ):
-        print(f"\n{title}")
-        staff_name = input("Enter Staff Name: ").strip().lower()
-        if staff_name == "c":
-            return None
-        while True:
-            contract_hours = validate_input("Enter contract hours: ")
-            if contract_hours is None:
-                # break
-                return None
-            if not 8 <= contract_hours <= 40:
-                print("Contract hours must be at least 8 at most 40")
-                continue
-            # break
-
-            day_exclusions = set()
-            day_availability_prompt = (
-                input("Do you have any day you will be unavailable (y/n)? ")
-                .strip()
-                .lower()
-            )
-            if day_availability_prompt == "c":
-                return True
-            if day_availability_prompt == "y":
-                print(f"\nWhat days are you unavailable -> {(DAY_OF_WEEK)}? ")
-                while True:
-                    unavailable_day = input("Enter day: ").strip().lower()
-                    if unavailable_day == "c":
-                        break
-                    if unavailable_day not in DAY_OF_WEEK:
-                        print("Invalid day")
-                    else:
-                        day_exclusions.add(unavailable_day)
-
-                    cont = input("Add another day (y/n)? ")
-                    if cont == "y":
-                        continue
-                    break
-            elif day_availability_prompt == "n":
-                pass
-            else:
-                print("Invalid Response")
-
-            shift_exclusions = set()
-            shift_availability_prompt = (
-                input("Do you have any shift you will be unavailable (y/n)? ")
-                .strip()
-                .lower()
-            )
-            if shift_availability_prompt == "c":
-                return None
-            if shift_availability_prompt == "y":
-                print(f"\nWhat shifts are you unavailable -> {(shift_time)}? ")
-                while True:
-                    unavailable_shift = input("Enter shift: ").strip().lower()
-                    if unavailable_shift == "c":
-                        break
-                    if unavailable_shift not in shift_time:
-                        print("Invalid shift")
-                    else:
-                        shift_exclusions.add(unavailable_shift)
-
-                    cont = input("Add another shift (y/n)? ")
-                    if cont == "y":
-                        continue
-                    break
-
-                break
-            elif shift_availability_prompt == "n":
-                break
-            else:
-                print("Invalid Response")
-                break
-
-        if create_new_instance:
-            try:
-                StaffData(
-                    id=id,
-                    name=staff_name,
-                    contract_hours=contract_hours,
-                    shift_exclusion_list=list(shift_exclusions),
-                    day_exclusion_list=list(day_exclusions),
-                )
-            except ValueError as e:
-                print("\nInvalid User ->", str(e))
-                print("")
-
-        return staff_name, contract_hours, day_exclusions, shift_exclusions
-
-    def draw_table(table: str) -> str:
-        print("-" * 42)
-        if table == "department":
-            print(f"{'| ID':<20}|{'Department Name':^20}|")
-            print("-" * 42)
-            for department in departments:
-                print(str(department.id).ljust(20, " "), end="")
-                print(str(department).center(20, " "))
-        else:
-            print(f"{'| ID':<20}|{'Staff Name':^20}|")
-            print("-" * 42)
-            for staff_member in staff:
-                print(str(staff_member.id).ljust(20, " "), end="")
-                print(str(staff_member).center(20, " "))
-
-        print("\n")
-
-    def select_department(action: str = "edit"):
-        dept_prompt = input(
-            f"Enter ID or Name of department to {action} (c to cancel): "
-        )
-        if dept_prompt.strip().lower() == "c":
-            return None
-        if dept_prompt.isnumeric():
-            dept_id = int(dept_prompt)
-            dept = [
-                department for department in departments if department.id == dept_id
-            ]
-        else:
-            dept_name = dept_prompt.strip().lower()
-            dept = [
-                department
-                for department in departments
-                if department.department_name == dept_name
-            ]
-
-        if dept:
-            return dept[0]
-        print("Department does not exist")
-        return None
-
-    def select_staff(action: str = "edit"):
-        staff_prompt = input(f"Enter ID or Name of staff to {action}: ")
-        if staff_prompt.strip().lower() == "c":
-            return None
-        if staff_prompt.isnumeric():
-            staff_id = int(staff_prompt)
-            staff_instance_arr = [
-                staff_member for staff_member in staff if staff_member.id == staff_id
-            ]
-        else:
-            staff_name = staff_prompt.strip().lower()
-            staff_instance_arr = [
-                staff_member
-                for staff_member in staff
-                if staff_member.name == staff_name
-            ]
-        if staff_instance_arr:
-            staff_instance = staff_instance_arr[0]
-            print(
-                f"\nStaff Name -> {staff_instance.name}\nContract Hours -> {staff_instance.contract_hours}\nDays Unavailable -> {staff_instance.day_exclusion_list}\nShifts Unavailable -> {staff_instance.shift_exclusion_list}\n"
-            )
-            return staff_instance
-
-        print("Staff does not exist")
-        return None
-
-    while True:
-        # while True:
-        try:
-            for key, val in prompt_dict.items():
-                print(val)
-            action_prompt = input("\nWhat would you like to do? ")
-            if action_prompt == "":
-                print("")
-                continue
-            if action_prompt not in prompt_dict:
-                print("Invalid Action!!! Try Again")
-                continue
-            # break
-
-            if action_prompt == "1":
-                print("\nDisplay current Departments and Staff -> ")
-                print("-" * 42)
-                print(f"{'| Departments':<20}|{'Staff':^20}|")
-                print("-" * 42)
-
-                for department, staff_member in zip_longest(
-                    departments, staff, fillvalue=""
-                ):
-                    print(str(department).ljust(20, " "), end="")
-                    print(str(staff_member).center(20, " "))
-
-                print("\n")
-
-            elif action_prompt == "2":
-                # while True:
-                # if create_dept():
-                create_dept()
-                #     break
-                # break
-                print("\n")
-
-            elif action_prompt == "3":
-                while True:
-                    if create_staff():
-                        break
-                    break
-                print("\n")
-
-            elif action_prompt == "4":
-                draw_table("department")
-
-                if not departments:
-                    print("Maybe start with creating departments\n")
-                    continue
-
-                print("Edit Department by Name or ID\n")
-
-                while True:
-                    dept = select_department()
-                    if dept is None:
-                        break
-                    if dept:
-                        print(
-                            f"\nDepartment Name -> {dept.department_name}\nMinimum Number of Staff -> {dept.min_num_staff}\nMaximum Number of Staff -> {dept.max_num_staff}"
-                        )
-                        while True:
-                            result = create_dept(
-                                title="Edit Department (c to cancel)",
-                                create_new_instance=False,
-                            )
-                            if result is None:
-                                break
-                            new_name, new_min, new_max = result
-                            if new_name:
-                                dept.department_name = new_name
-                                dept.min_num_staff = new_min
-                                dept.max_num_staff = new_max
-                                break
-
-                            print("\n")
-                    else:
-                        print("Department does not exist")
-                        continue
-
-            elif action_prompt == "5":
-                draw_table("staff")
-
-                if not staff:
-                    print("No Staff available\n")
-                    continue
-
-                print("Edit Staff by Name or ID\n")
-
-                while True:
-                    staff_instance = select_staff()
-                    if staff_instance is None:
-                        break
-                    break
-
-                while True:
-                    result = create_staff(
-                        title="Edit Staff (c to cancel)", create_new_instance=False
-                    )
-                    if result is None:
-                        print("\n")
-                        break
-
-                    new_name, contract_hours, days_unavailable, shifts_unavailable = (
-                        result
-                    )
-
-                    if new_name:
-                        staff_instance.name = new_name
-                        staff_instance.contract_hours = contract_hours
-                        if days_unavailable:
-                            staff_instance.day_exclusion_list = list(days_unavailable)
-                        if shifts_unavailable:
-                            staff_instance.shift_exclusion_list = list(
-                                shifts_unavailable
-                            )
-                        print("\n")
-                        break
-
-                    print("\n")
-
-            elif action_prompt == "6":
-                delete_prompt = validate_input(
-                    "1 to delete Department, 2 to delete Staff (c to cancel): "
-                )
-                if delete_prompt is None:
-                    continue
-
-                elif delete_prompt == 1:
-                    draw_table("department")
-                    dept = select_department(action="delete")
-                    if dept is None:
-                        print("\n")
-                        continue
-                    else:
-                        DepartmentData.departments.remove(dept)
-                        print("\n")
-                elif delete_prompt == 2:
-                    draw_table("staff")
-                    staff_instance = select_staff(action="delete")
-                    if staff_instance is None:
-                        print("\n")
-                        continue
-                    else:
-                        StaffData.staff_members.remove(staff_instance)
-                        print("\n")
-
-                else:
-                    print("Invalid Response")
-                    continue
-
-            elif action_prompt == "7":
-                res = scheduler(departments, staff)
-                res_name = scheduler(departments, staff, use_id=False)
-                # print("")
-                # print(res)
-                # print("")
-                # print(res_name)
-                print("")
-                print_schedule(res_name)
-
-            else:
-                print("Invalid Prompt\n")
-
-        except KeyboardInterrupt:
-            quit()
-
-# if __name__ == "__main__":
-#     departments: list[DepartmentData] = DepartmentData.list_departments()
-#     staff: list[StaffData] = StaffData.list_staff_members()
-
-#     # create departments
-#     shoes = DepartmentData("shoes", 1)
-#     cashier = DepartmentData("cashier", 5, 2)
-#     home = DepartmentData("home", 2)
-
-#     # create staff
-#     kolade = StaffData(
-#         "kolade",
-#         position="associate",
-#         shift_exclusion_list=["evening"],
-#         contract_hours=20,
-#     )
-#     motun = StaffData("motun", position="associate")
-#     core = StaffData("core", position="associate", contract_hours=20)
-#     kunle = StaffData("kunle", position="associate")
-#     dara = StaffData("dara", position="associate")
-#     lanre = StaffData("lanre", position="associate")
-#     tayo = StaffData("tayo", position="associate")
-#     loli = StaffData("loli", position="associate")
-#     shem = StaffData("shem", position="associate")
-#     riri = StaffData("riri", position="associate")
-
-
-#     domains = {department: staff for department in departments}
-
-#     domains = {
-#         day: {
-#             department: {tme: [stf for stf in staff] for tme in shift_time}
-#             for department in departments
-#         }
-#         for day in DAY_OF_WEEK
-#     }
-#     res = scheduler(departments, staff, use_id=True)
-#     print(res)
-#     # print(json.dumps(res, indent=2))
+    # print(res)

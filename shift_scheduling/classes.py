@@ -1,6 +1,7 @@
 import random
 
 # TODO
+# Use _setattr_ to enforce various attribute expected types
 """
  - Define classes for DepartmentData and StaffData
  - Staff members have availability days
@@ -33,21 +34,27 @@ class StaffData:
         shift_exclusion_list: list = [],
         day_exclusion_list: list = [],
         contract_hours: int = 40,
+        min_hours: int = 8,
     ):
         self.id = id
         # self.name = name
         self.name = name.lower()
         self.position = position.lower()
         self.contract_hours = contract_hours
-        self.min_hours = 8
+        self.min_hours = min_hours
         self.hours_worked = 0
         self.shift_exclusion_list = shift_exclusion_list
         self.day_exclusion_list = day_exclusion_list
         self.working = False
-        
+
         # contract hours must be at least 8 hours
         if self.contract_hours < 8:
             raise ValueError("Contract hours must be at least 8 hours")
+
+        if self.min_hours > self.contract_hours:
+            raise ValueError(
+                "Minimum workable hours can not be more than contract hours "
+            )
 
         if not self._is_feasible():
             raise ValueError(
@@ -59,6 +66,16 @@ class StaffData:
             StaffData.next_id += 1
 
         self.__class__.staff_members.append(self)
+
+    @property
+    def min_hours(self) -> int:
+        return self._min_hours
+
+    @min_hours.setter
+    def min_hours(self, value: int):
+        if not (8 <= value <= self.contract_hours):
+            raise ValueError(f"min_hours must be between 8 and {self.contract_hours}.")
+        self._min_hours = value
 
     @classmethod
     def list_staff_members(cls):
@@ -95,10 +112,17 @@ class StaffData:
             and self.contract_hours != 0
         )
 
+    @classmethod
+    def remove_staff(cls, obj):
+        cls.staff_members.remove(obj)
+        return cls.staff_members
+
     def __eq__(self, other: object) -> bool:
         if isinstance(other, StaffData):
             return self.id == other.id
-        raise ValueError("Obects are of different types. Requires same obect of type StaffData")
+        raise ValueError(
+            "Obects are of different types. Requires same obect of type StaffData"
+        )
 
     def __str__(self):
         return self.name
