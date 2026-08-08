@@ -3,6 +3,7 @@ from typing import Literal
 from sqlmodel import SQLModel
 from datetime import date
 from models import *
+from pydantic import EmailStr, model_validator
 
 
 class StaffCreateRequest(BaseModel):
