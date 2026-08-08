@@ -10,6 +10,7 @@ class StaffCreateRequest(BaseModel):
     last_name: str
     position: str
     contract_hours: int
+    min_hours: int
     email: EmailStr
     shift_exclusions: list[Literal["morning", "afternoon", "evening"]]
     day_exclusions: list[
@@ -17,6 +18,15 @@ class StaffCreateRequest(BaseModel):
             "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"
         ]
     ]
+    
+    @model_validator(mode="after")
+    def validate_hours(self):
+        if not (8 <= self.min_hours <= self.contract_hours):
+            raise ValueError(
+                f"min_hours must be between 8 and {self.contract_hours}."
+            )
+
+        return self
 
 
 class DepartmentCreateRequest(BaseModel):

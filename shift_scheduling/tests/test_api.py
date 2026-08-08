@@ -20,10 +20,11 @@ class TestCreateStaff(BaseTestClass):
             "first_name": "kol",
             "last_name": "Ade",
             "position": "associate",
-            "contract_hours": "40",
+            "contract_hours": 40,
             "day_exclusions": [],
             "shift_exclusions": [],
             "email": "invalid-email",
+            "min_hours": 8
         }
 
     def teardown_method(self):
@@ -34,33 +35,37 @@ class TestCreateStaff(BaseTestClass):
         response = client.post("/create-staff", json=self.data)
         assert response.status_code == 422
 
+    # @pytest.mark.xfail
     def test_create_staff_success(self):
         self.data["first_name"] = "kun"
         self.data["email"] = "he@me.com"
         response = client.post("/create-staff", json=self.data)
-        print(response.json())
         assert response.status_code == 200
 
+    # @pytest.mark.xfail
     def test_create_staff_null_fail(self):
         self.data["first_name"] = None
         response = client.post("/create-staff", json=self.data)
         assert response.status_code == 422
-
+    
+    # @pytest.mark.xfail
     def test_invalid_json_body(self):
         "Returns an error if one of the contents in self.data is missing"
         self.data.pop("last_name")
         response = client.post("/create-staff", json=self.data)
         assert response.status_code == 422
-
+    
+    # @pytest.mark.xfail
     def test_same_email_fail(self):
         self.kun = {
             "first_name": "kun",
             "last_name": "Ade",
             "position": "associate",
-            "contract_hours": "40",
+            "contract_hours": 40,
             "day_exclusions": [],
             "shift_exclusions": [],
             "email": "kun@me.com",
+            "min_hours": 8
         }
 
         client.post("/create-staff", json=self.kun)
@@ -69,13 +74,15 @@ class TestCreateStaff(BaseTestClass):
             "first_name": "kol",
             "last_name": "Ade",
             "position": "associate",
-            "contract_hours": "40",
+            "contract_hours": 40,
             "day_exclusions": [],
             "shift_exclusions": [],
             "email": "kun@me.com",
+            "min_hours": 8
         }
 
         response = client.post("/create-staff", json=self.kun)
+        print(response.json())
         assert response.status_code == 400
 
 
@@ -91,6 +98,7 @@ class TestListStaff(BaseTestClass):
             "day_exclusions": [],
             "shift_exclusions": [],
             "email": "kun@me.com",
+            "min_hours": 8
         }
 
         self.kol = {
@@ -101,6 +109,7 @@ class TestListStaff(BaseTestClass):
             "day_exclusions": [],
             "shift_exclusions": [],
             "email": "kol@me.com",
+            "min_hours": 8
         }
 
     def teardown_method(self):
@@ -108,6 +117,7 @@ class TestListStaff(BaseTestClass):
         del self.kol
         del self.kun
 
+    # @pytest.mark.xfail
     def test_staff_list(self):
         client.post("/create-staff", json=self.kol)
         client.post("/create-staff", json=self.kun)
@@ -129,23 +139,27 @@ class TestCreateDepartment(BaseTestClass):
 
         del self.shoes
 
+    #@pytest.mark.xfail
     def test_create_department_success(self):
         response = client.post("/create_department", json=self.shoes)
         assert response.status_code == 200
 
+    #@pytest.mark.xfail
     def test_create_duplicate_name(self):
         "This test should fail becuase two departments can not have same name"
         client.post("/create_department", json=self.shoes)
         self.shoes_duplicate = {"name": "shoes", "min_staff": 1, "max_staff": 1}
         response = client.post("/create_department", json=self.shoes_duplicate)
         assert response.status_code == 400
-        
+
+    #@pytest.mark.xfail
     def test_missing_field_pass(self):
         "This tests for absence of missing field (excluding name) and should pass "
         self.shoes.pop("min_staff")
         response = client.post("/create_department", json=self.shoes)
         assert response.status_code == 200
         
+    #@pytest.mark.xfail
     def test_misisng_field_fail(self):
         self.shoes.pop("name")
         response = client.post("/create_department", json=self.shoes)

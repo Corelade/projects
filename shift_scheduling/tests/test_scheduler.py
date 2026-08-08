@@ -107,6 +107,9 @@ class TestCheckFeasibility(BaseClass):
     def test_feasibility_is_false(self):
         """All of the checks here should return False"""
         assert is_feasibile([], []) is False  # if no staff nor dept
+        # assert is_feasibile(
+        #     [self.shoes], [self.bola, self.core, self.loli, self.riri, self.shem]
+        # ) #more available staff than depts required
         assert (
             is_feasibile([self.shoes], [self.kolade, self.kunle]) is False
         )  # Kunle not available tuesday, kolade not available tuesday evening
@@ -152,6 +155,9 @@ class TestCheckFeasibility(BaseClass):
         assert is_feasibile([self.mens], [self.bola], ["monday", "tuesday"]) is True
         assert is_feasibile([self.mens], [self.bola, self.core]) is False
         assert is_feasibile([self.mens], [self.bola, self.core, self.kunle]) is True
+        assert is_feasibile(
+            [self.shoes], [self.bola, self.riri, self.loli, self.shem, self.segun]
+        ) is True
         # checking two depts with one department requiring at least 2 people at all times
         assert (
             is_feasibile(
