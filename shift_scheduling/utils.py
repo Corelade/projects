@@ -128,31 +128,27 @@ def create_schedule():
         res = scheduler(department_list, staff_list, use_id=False)
 
         if res:
-            staff_map = {
-                staff.first_name: staff for staff in db.exec(select(Staff)).all()
-            }
+            staff_map = {staff.id: staff for staff in db.exec(select(Staff)).all()}
             department_map = {
-                department.name: department
+                department.id: department
                 for department in db.exec(select(Department)).all()
             }
-            
+
             # print(staff_map.keys())
             # print('')
             # print('-'*30)
             for day in res:
                 week_date = get_date_from_week(current_week.week_start, day)
-                for department_name in res[day]:
-                    dept = department_map[department_name]
-                    for shift in res[day][department_name]:
-                        for staff_id in res[day][department_name][shift]:
-                            staff = staff_map[staff_id]
+                for dept in res[day]:
+                    for shift in res[day][dept]:
+                        for stf in res[day][dept][shift]:
                             schedule = Schedule(
                                 week=current_week,
-                                department=dept,
                                 week_date=week_date,
                                 week_day=day,
-                                staff=staff,
                                 time=shift,
+                                department=department_map[dept.id],
+                                staff=staff_map[stf.id],
                             )
                             db.add(schedule)
 
@@ -167,6 +163,7 @@ def create_schedule():
 
 
 # week = get_week()
-if __name__ == '__main':
+if __name__ == "__main__":
     res = create_schedule()
-    print_schedule(res)
+    if res:
+        print_schedule(res)

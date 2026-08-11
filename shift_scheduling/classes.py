@@ -157,15 +157,15 @@ class DepartmentData:
         self.min_num_staff = min_num_staff
         self.priority = ["afternoon", "evening"]
         self.staff_list = []
-        if self.department_name in [
+        if not self.department_name in [
             d.department_name for d in DepartmentData.departments
         ]:
-            raise ValueError("Department name exists already.")
+            # raise ValueError("Department name exists already.")
+            if not self.id:
+                self.id = DepartmentData.next_id
+                DepartmentData.next_id += 1
+            self.__class__.departments.append(self)
 
-        if not self.id:
-            self.id = DepartmentData.next_id
-            DepartmentData.next_id += 1
-        self.__class__.departments.append(self)
 
     @classmethod
     def list_departments(cls):

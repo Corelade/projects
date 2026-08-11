@@ -11,7 +11,7 @@ class StaffCreateRequest(BaseModel):
     last_name: str
     position: str
     contract_hours: int
-    min_hours: int
+    min_hours: int = 8
     email: EmailStr
     shift_exclusions: list[Literal["morning", "afternoon", "evening"]]
     day_exclusions: list[

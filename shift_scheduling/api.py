@@ -112,7 +112,7 @@ def create_staff(data: StaffCreateRequest, db: SessionDep) -> StaffRead:
         db.commit()
     except IntegrityError as e:
         db.rollback()
-        raise HTTPException(status_code=400, detail=f'Email already exists: {str(e)}')
+        raise HTTPException(status_code=400, detail=f'Email already exists')
 
     db.refresh(staff)
 

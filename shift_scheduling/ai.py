@@ -1,6 +1,6 @@
 from openai import OpenAI, AsyncOpenAI
 from dotenv import load_dotenv
-from app import scheduler, print_schedule
+from app import scheduler, print_schedule, to_normal_dict
 from classes import *
 import json
 from prompt_toolkit import prompt
@@ -34,24 +34,26 @@ client = OpenAI(api_key=api_key)
 def ai_scheduler(
     department_objects: list[DepartmentDict],
     staff_objects: list[StaffDict],
-    use_id=False,
+    # use_id=False,
 ):
     try:
         departments = [DepartmentData(**dept) for dept in department_objects]
         staff = [StaffData(**staff) for staff in staff_objects]
     except Exception as e:
-        return str(e)
+        return json.dumps({"error": str(e)})
 
-    res = scheduler(departments, staff, use_id=use_id)
-    # print_schedule(res)
-    return json.dumps(res)
+    res = scheduler(departments, staff)
+    if res:
+        print_schedule(res)
+        return json.dumps(to_normal_dict(res))
+    return json.dumps({"error": "Unable to generate schedule"})
 
 
 tools = [
     {
         "type": "function",
         "name": "ai_scheduler",
-        "description": "A function for generating weekly schedules for shifts",
+        "description": "A function for generating weekly schedules for shifts. Do not attempt to manually create the schedule",
         "parameters": {
             "type": "object",
             "properties": {
@@ -68,10 +70,12 @@ tools = [
                             "max_num_staff": {
                                 "type": "integer",
                                 "description": "The maximum number of staff that can be assigned to the departent at any given time.",
+                                "default": 1,
                             },
                             "min_num_staff": {
                                 "type": "integer",
                                 "description": "The minimum number of staff that can be assigned to the departent at any given time.",
+                                "default": 1,
                             },
                             "id": {
                                 "type": ["integer", "null"],
@@ -149,10 +153,10 @@ tools = [
                         "additionalProperties": False,
                     },
                 },
-                "use_id": {
-                    "type": "boolean",
-                    "description": "Whether staff members should be identified using their id or name.",
-                },
+                # "use_id": {
+                #     "type": "boolean",
+                #     "description": "Whether staff members should be identified using their id or name.",
+                # },
             },
             "additionalProperties": False,
             "required": ["departments", "staff"],
@@ -195,7 +199,7 @@ if __name__ == "__main__":
                 result = ai_scheduler(
                     department_objects=arguments["departments"],
                     staff_objects=arguments["staff"],
-                    use_id=arguments.get("use_id", False),
+                    # use_id=arguments.get("use_id", False),
                 )
 
                 input_list.append(
