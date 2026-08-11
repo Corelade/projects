@@ -17,6 +17,7 @@ class BaseClass:
         self.shoes = DepartmentData("shoes", 1)
         self.mens = DepartmentData("men", 1)
         self.ladies = DepartmentData("ladies", max_num_staff=2, min_num_staff=2)
+        self.home = DepartmentData("home", 1)
 
         self.kolade = StaffData("Kolade", "associate", shift_exclusion_list=["evening"])
         self.kunle = StaffData("Kunle", "associate", day_exclusion_list=["tuesday"])
@@ -90,8 +91,8 @@ class TestStaffData(BaseClass):
         )
         assert self.k1 != self.k2
 
-        with pytest.raises(ValueError):
-            assert self.k1 == self.shoes
+        # with pytest.raises(ValueError):
+        assert self.k1 != self.shoes
 
 
 class TestDepartmentData:
@@ -155,9 +156,12 @@ class TestCheckFeasibility(BaseClass):
         assert is_feasibile([self.mens], [self.bola], ["monday", "tuesday"]) is True
         assert is_feasibile([self.mens], [self.bola, self.core]) is False
         assert is_feasibile([self.mens], [self.bola, self.core, self.kunle]) is True
-        assert is_feasibile(
-            [self.shoes], [self.bola, self.riri, self.loli, self.shem, self.segun]
-        ) is True
+        assert (
+            is_feasibile(
+                [self.shoes], [self.bola, self.riri, self.loli, self.shem, self.segun]
+            )
+            is True
+        )
         # checking two depts with one department requiring at least 2 people at all times
         assert (
             is_feasibile(
@@ -180,10 +184,12 @@ class TestCheckFeasibility(BaseClass):
 
 class TestStaffValidity:
     def setup_method(self):
-        self.motun = StaffData("motun", "associate")
-        self.bola = StaffData("Bola", "associate")
-        self.core = StaffData("Core", "associate")
-        self.loli = StaffData("loli", "associate")
+        StaffData.staff_members.clear()
+
+        self.motun = StaffData("motun", position="associate")
+        self.bola = StaffData("Bola", position="associate")
+        self.core = StaffData("Core", position="associate")
+        self.loli = StaffData("loli", position="associate")
 
     def test_get_valid_staff_pass(self):
         for _ in range(11):
@@ -192,6 +198,7 @@ class TestStaffValidity:
             self.loli.add_hours()
 
         valid_staff = get_valid_staff(StaffData.staff_members)
+
         assert self.core in valid_staff
         assert len(valid_staff) == 1
 
@@ -258,23 +265,24 @@ def test_get_other_staff():
 
 
 class TestValidAssignments(BaseClass):
+    # @pytest.mark.skip
     def test_invalid_assignment(self):
         assignment = {
             "monday": {
-                "shoes": {
-                    "morning": ["kolade", "kunle"],
-                    "afternoon": ["kolade"],
-                    "evening": ["kolade"],
+                self.shoes: {
+                    "morning": [self.kolade, self.kunle],
+                    "afternoon": [self.kolade],
+                    "evening": [self.kolade],
                 },
-                "ladies": {
-                    "morning": ["kunle", "motun"],
-                    "afternoon": ["kunle", "motun"],
-                    "evening": ["kunle", "motun"],
+                self.ladies: {
+                    "morning": [self.kunle, self.motun],
+                    "afternoon": [self.kunle, self.motun],
+                    "evening": [self.kunle, self.motun],
                 },
-                "home": {
-                    "morning": ["core"],
-                    "afternoon": ["core"],
-                    "evening": ["star"],
+                self.mens: {
+                    "morning": [self.core],
+                    "afternoon": [self.core],
+                    "evening": [self.core],
                 },
             },
         }
@@ -295,24 +303,25 @@ class TestValidAssignments(BaseClass):
     def test_valid_assignment(self):
         assignment = {
             "monday": {
-                "shoes": {
-                    "morning": ["kolade"],
-                    "afternoon": ["kolade"],
-                    "evening": ["kolade"],
+                self.shoes: {
+                    "morning": [self.kolade],
+                    "afternoon": [self.kolade],
+                    "evening": [self.segun],
                 },
-                "ladies": {
-                    "morning": ["kunle", "motun"],
-                    "afternoon": ["kunle", "motun"],
-                    "evening": ["kunle", "motun"],
+                self.ladies: {
+                    "morning": [self.kunle, self.motun],
+                    "afternoon": [self.kunle, self.motun],
+                    "evening": [self.halafia, self.daoud],
                 },
-                "home": {
-                    "morning": ["core"],
-                    "afternoon": ["core"],
-                    "evening": ["star"],
+                self.home: {
+                    "morning": [self.core],
+                    "afternoon": [self.core],
+                    "evening": [self.core],
                 },
             },
         }
 
+        print(assignment)
         validity = is_valid(
             assignment, self.shoes, "morning", self.kolade, "monday", use_id=False
         )

@@ -29,12 +29,12 @@ class StaffData:
     def __init__(
         self,
         name: str,
-        id: int | None = None,
         position: str = "associate",
         shift_exclusion_list: list = [],
         day_exclusion_list: list = [],
         contract_hours: int = 40,
         min_hours: int = 8,
+        id: int | None = None,
     ):
         self.id = id
         # self.name = name
@@ -120,9 +120,10 @@ class StaffData:
     def __eq__(self, other: object) -> bool:
         if isinstance(other, StaffData):
             return self.id == other.id
-        raise ValueError(
-            "Obects are of different types. Requires same obect of type StaffData"
-        )
+        # raise ValueError(
+        #     "Obects are of different types. Requires same obect of type StaffData"
+        # )
+        return False
 
     def __str__(self):
         return self.name
@@ -190,10 +191,11 @@ class DepartmentData:
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, DepartmentData):
-            return self.department_name == other.department_name
-        raise ValueError(
-            "Obects are of different types. Requires same obect of type DepartmentData"
-        )
+            return self.id == other.id
+        # raise ValueError(
+        #     "Obects are of different types. Requires same obect of type DepartmentData"
+        # )
+        return False
 
     def __hash__(self) -> int:
         return hash(self.department_name)

@@ -193,6 +193,7 @@ def is_valid(
     # one domain can not have more than its max_cap
     # if domain.max_num_staff < len(assignment[day][domain.department_name][tme]):
     if domain.max_num_staff < len(assignment[day][domain][tme]):
+        print('here')
         # print(
         #     f"Error -> {domain} requires {domain.max_num_staff} but got {len(assignment[domain][tme])}",
         #     "\n",
@@ -215,6 +216,7 @@ def is_valid(
     
     staff_count = assignment[day][domain][tme].count(staff)
     if staff_count > 1:
+        print('hereeee')
         # print(
         #     f"Error -> StaffData:{staff} appears {assignment[domain.department_name][tme].count(staff)} times",
         #     "\n",
@@ -222,6 +224,7 @@ def is_valid(
         return False
 
     if tme in staff.shift_exclusion_list or day in staff.day_exclusion_list:
+        print('exclusion ish')
         return False
 
     # one staff can not be in more than one domain
@@ -241,6 +244,7 @@ def is_valid(
     # value = staff.id if use_id else staff.name
     value = staff
     if value in assigned_staff_arr:
+        print(value, assigned_staff_arr)
         # print(f"Error -> {staff} already in assigned_staff_arr", "\n")
         return False
 
