@@ -569,14 +569,3 @@ class TestUpdateSchedule:
         assert self.loli not in get_staff_in_shifts(
             assignment=updated_res, query_shift="evening"
         )
-        # pres =  get_staff_in_shifts(
-        #     assignment=updated_res, query_shift="evening"
-        # )
-        # print(self.loli.shift_exclusion_list, pres)
-        
-        # assert self.loli not in get_staff_in_day(
-        #     assignment=updated_res, query_day="friday"
-        # )
-        # assert self.core not in get_staff_in_day(
-        #     assignment=updated_res, query_day="wednesday"
-        # )
