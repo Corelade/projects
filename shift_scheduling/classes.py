@@ -181,6 +181,11 @@ class DepartmentData:
 
     def is_full(self):
         return self.min_num_staff == len(self.staff_list)
+    
+    @classmethod
+    def remove_department(cls, obj):
+        cls.departments.remove(obj)
+        return cls.departments
 
     def __str__(self):
         return self.department_name

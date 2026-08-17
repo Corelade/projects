@@ -1,7 +1,7 @@
 from classes import DepartmentData, StaffData
 import copy
 import random
-from collections import defaultdict
+from collections import defaultdict, Counter
 import json
 from itertools import zip_longest
 from typing import Literal, TypedDict
@@ -18,14 +18,94 @@ DAY_OF_WEEK = [
 ]
 
 
-class ShiftAssignments(TypedDict):
-    morning: list[str]
-    afternoon: list[str]
-    evening: list[str]
-
-
-DepartmentAssignments = dict[str, ShiftAssignments]
+ShiftAssignments = dict[str, list[StaffData]]
+DepartmentAssignments = dict[DepartmentData, ShiftAssignments]
 AssignmentStruct = dict[str, DepartmentAssignments]
+
+
+def get_assignment_departments(assignment: AssignmentStruct):
+    departments = set([department for val in assignment.values() for department in val])
+    return departments
+
+
+def get_staff_in_day(
+    *,
+    assignment: AssignmentStruct,
+    query_day: Literal[
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+    ],
+):
+    "This function is to get the unique staff present in a given day"
+    day_staff = set(
+        [
+            stf
+            for day, department_assignment in assignment.items()
+            for times_assignment in department_assignment.values()
+            for staff_members in times_assignment.values()
+            for stf in staff_members
+            if day == query_day
+        ]
+    )
+    return day_staff
+
+
+def get_staff_shift_count_in_day(
+    *,
+    staff_member: StaffData,
+    assignment: AssignmentStruct,
+    query_day: Literal[
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+    ],
+):
+    "This function is to get the number of shifts a staff has worked in a given day"
+    # print(assignment, 'in', get_staff_shift_count_in_day.__name__)
+    shift_count = len(
+        [
+            stf
+            for day, department_assignment in assignment.items()
+            for times_assignment in department_assignment.values()
+            for staff_members in times_assignment.values()
+            for stf in staff_members
+            if day == query_day and stf == staff_member
+        ]
+    )
+
+    return shift_count
+
+
+def get_staff_in_shifts(
+    *,
+    # staff_member: StaffData,
+    assignment: AssignmentStruct,
+    query_shift: Literal["morning", "afternoon", "evening"],
+):
+    "This function is to get the shifts a staff works in the week"
+    # print(assignment, 'in', get_staff_shift_count_in_day.__name__)
+    staff_shifts = set(
+        [
+            stf
+            for day, department_assignment in assignment.items()
+            for shift, times_assignment in department_assignment.items()
+            for time, staff_members in times_assignment.items()
+            for stf in staff_members 
+            if time == query_shift
+            # and stf == staff_member
+        ]
+    )
+    print(staff_shifts)
+    return staff_shifts
 
 
 def to_normal_dict(d):
@@ -165,13 +245,26 @@ def get_other_staff(
     return assigned_staff_arr
 
 
+def get_assignment_staff(assignment: AssignmentStruct):
+    assigned_staff = set(
+        [
+            stf
+            for day, val in assignment.items()
+            for department in val.values()
+            for staff_list in department.values()
+            for stf in staff_list
+        ]
+    )
+    return assigned_staff
+
+
 def is_valid(
     assignment: dict,
     domain: DepartmentData,
     tme: Literal["morning", "afternoon", "evening"],
     staff: StaffData,
     day: str,
-    use_id: bool = True,
+    # use_id: bool = True,
 ):
     # checks to see if an assigment is valid
 
@@ -193,7 +286,7 @@ def is_valid(
     # one domain can not have more than its max_cap
     # if domain.max_num_staff < len(assignment[day][domain.department_name][tme]):
     if domain.max_num_staff < len(assignment[day][domain][tme]):
-        print('here')
+        # print('here')
         # print(
         #     f"Error -> {domain} requires {domain.max_num_staff} but got {len(assignment[domain][tme])}",
         #     "\n",
@@ -213,10 +306,10 @@ def is_valid(
         staff_count = assignment[day][domain.department_name][tme].count(staff.id)
     else:
         staff_count = assignment[day][domain.department_name][tme].count(staff.name)"""
-    
+
     staff_count = assignment[day][domain][tme].count(staff)
     if staff_count > 1:
-        print('hereeee')
+        # print('hereeee')
         # print(
         #     f"Error -> StaffData:{staff} appears {assignment[domain.department_name][tme].count(staff)} times",
         #     "\n",
@@ -224,7 +317,7 @@ def is_valid(
         return False
 
     if tme in staff.shift_exclusion_list or day in staff.day_exclusion_list:
-        print('exclusion ish')
+        # print('exclusion ish')
         return False
 
     # one staff can not be in more than one domain
@@ -244,7 +337,7 @@ def is_valid(
     # value = staff.id if use_id else staff.name
     value = staff
     if value in assigned_staff_arr:
-        print(value, assigned_staff_arr)
+        # print(value, assigned_staff_arr)
         # print(f"Error -> {staff} already in assigned_staff_arr", "\n")
         return False
 
@@ -262,8 +355,14 @@ def backtrack(
     departments: list[DepartmentData],
     staff: list[StaffData],
     domains: AssignmentStruct,
-    use_id: bool = True,
+    # use_id: bool = True,
+    print_domain: bool = False,
 ):
+
+    # if print_domain:
+    #     print(domains)
+    #     print(staff)
+
     # print([(st, st.hours_worked) for st in staff])
     # before running the scheduler function, check if there is a solution
     # if not is_feasibile():
@@ -282,15 +381,7 @@ def backtrack(
      - Might break when some staff dont work on some specific days
     """
     # assigned_staff_count = sum(len(staff_list) for staff_list in assignment.values())
-    assigned_staff_count = set(
-        [
-            stf
-            for day, val in assignment.items()
-            for department in val.values()
-            for staff_list in department.values()
-            for stf in staff_list
-        ]
-    )
+    assigned_staff_count = get_assignment_staff(dict(assignment))
 
     num_assigned_staff = len(
         [
@@ -357,6 +448,7 @@ def backtrack(
             return assignment
 
     if not valid_domains:
+        # print("No more valid domains")
         return None
     """
     ASSIGNMENT SATISFACTION CHECKS - End
@@ -424,7 +516,16 @@ def backtrack(
         #     continue
 
         "clone assignment"
-        new_assignment = copy.deepcopy(assignment)
+        # new_assignment = copy.deepcopy(assignment)
+        new_assignment = {
+            day: {
+                dept: {
+                    time: list(staff_members) for time, staff_members in times.items()
+                }
+                for dept, times in departments.items()
+            }
+            for day, departments in assignment.items()
+        }
         # print(new_assignment)
         # print("first", to_normal_dict(new_assignment))
 
@@ -453,14 +554,14 @@ def backtrack(
         #     "checking validity...\nIs Valid? ",
         # )
         # stf.hours_worked += 4
-        if is_valid(new_assignment, dom, tme, stf, day, use_id=use_id):
+        if is_valid(new_assignment, dom, tme, stf, day):
             # seen[dom][stf.id] += 4
             # print(
             #     f"New Assignment of {stf} to ({dom}, {tme}) -> {to_normal_dict(new_assignment)}",
             #     "\n",
             # )
             # time.sleep(5)
-            result = backtrack(new_assignment, departments, staff, domains, use_id)
+            result = backtrack(new_assignment, departments, staff, domains)
             if result:
                 return result
         stf.hours_worked -= 4
@@ -472,6 +573,7 @@ def backtrack(
         # if i == 2:
         #     break
         # print("\n")
+    # print("Can not find suitable appointment")
     return None
 
 
@@ -479,24 +581,28 @@ def update_schedule(
     assignment: AssignmentStruct,
     departments: list[DepartmentData],
     staff: list[StaffData],
-    # domains: AssignmentStruct,
-    use_id: bool = True,
+    print_assignment: bool = False,
 ):
     """
     Update Triggers
-    - Staff Removal/Addition // Department Removal/Addition
+    - Staff Addition ✅
+    - Staff Removal ✅
+        if staff no longer exists or unavailable or change in contract hours
+    - Department Removal ✅
+    - Department Addition ✅
+    - Change in contract hours ✅
     - Department modifications
-    - Change in contract hours
-    - Change in time/day availability TODO
+        - max_num_staff reduction ✅
+        - min_num staff increase ✅
+    - Change in time/day availability
+        - day availability ✅
+        - time availability
     """
-    # value = staff.id if use_id else staff.name
 
     # TODO Breaks when i add new staff and the domains have already been filled
 
     if not is_feasibile(departments, staff):
         return None
-
-    dept_dict = {dept.department_name: dept for dept in departments}
 
     domains = {
         day: {
@@ -506,45 +612,21 @@ def update_schedule(
         for day in DAY_OF_WEEK
     }
 
-    "Staff/Department Removal"
-    if not use_id:
-        staff_list = {stf.name: stf for stf in staff}
-        stf_hours_worked_dict = {stf.name: stf.hours_worked for stf in staff}
-        stf_contract_hours_dict = {stf.name: stf.contract_hours for stf in staff}
-    else:
-        staff_list = {stf.id: stf for stf in staff}
-        stf_hours_worked_dict = {stf.id: stf.hours_worked for stf in staff}
-        stf_contract_hours_dict = {stf.id: stf.contract_hours for stf in staff}
-
     "Change in contract hours - reduction"
     overassigned_staff = set()
-    for stf, stf_instance in staff_list.items():
-        if stf_instance.hours_worked > stf_instance.contract_hours:
+    for stf in staff:
+        if stf.hours_worked > stf.contract_hours:
             overassigned_staff.add(stf)
 
-    # for day in assignment:
-    #     for department in assignment[day]:
-    #         if department not in departments:  # Department Removal
-    #             for tme in assignment[day][department]:
-    #                 for stf in assignment[day][department][tme]:
-    #                     if stf in staff_list:
-    #                         staff_list[stf].hours_worked -= 4
-    #                 del assignment[day][department]
-    #             continue
-    #         for tme in assignment[day][department]:
-    #             for stf in assignment[day][department][tme]:
-    #                 if stf not in staff_list:  # Staff Removal
-    #                     assignment[day][department][tme].remove(stf)
-    #                     continue
-
-    #                 # if staff hours worked is <= contract hours can skip, else remove staff_from assignment
-    #                 if (
-    #                     stf_hours_worked_dict[stf] > stf_contract_hours_dict[stf]
-    #                 ):  # staff hours modification
-    #                     overassigned_staff.add(stf)
-    #                     assignment[day][department][tme].remove(stf)
-
     new_assignment = {}
+
+    removed_departments = set()
+
+    wrong_day_staff_assignment = defaultdict(int)
+    wrong_shift_staff_assignment = defaultdict(int)
+
+    initial_hours_worked_map = {st: st.hours_worked for st in staff}
+    # print("initial hours worked ->", initial_hours_worked_map)
 
     for day, day_departments in assignment.items():
 
@@ -552,19 +634,28 @@ def update_schedule(
 
         for department, times in day_departments.items():
 
-            if department not in dept_dict:
+            if department not in departments:
+                for s in assignment[day][department]:
+                    for staff_member in assignment[day][department][s]:
+                        overassigned_staff.add(staff_member)
+
+                removed_departments.add(department)
                 continue
+
+            # print('in for loop', [dept.max_num_staff for dept in departments])
 
             new_assignment[day][department] = {}
 
-            department_instance = dept_dict[department]
+            # department_instance = dept_dict[department]
 
             for time, staff_members in times.items():
-
                 "Department Modification"
                 # Should be used in case minimum/maximum number of allowed staff reduces. if minimum staff increases or maximum staff increases, it will be fixed automatically
-                if (department_instance.min_num_staff > len(staff_members)) or (
-                    department_instance.max_num_staff < len(staff_members)
+                wrong_days_list = []
+                wrong_shift_list = []
+
+                if (department.min_num_staff > len(staff_members)) or (
+                    department.max_num_staff < len(staff_members)
                 ):
                     filtered_staff = []
 
@@ -572,43 +663,97 @@ def update_schedule(
                     filtered_staff = [
                         stf
                         for stf in staff_members
-                        if (stf in staff_list)
+                        if (stf in staff)
                         and (stf not in overassigned_staff)
-                        and (time not in staff_list[stf].shift_exclusion_list)
-                        and (day not in staff_list[stf].day_exclusion_list)
+                        and (time not in stf.shift_exclusion_list)
+                        and (day not in stf.day_exclusion_list)
                     ]
+
+                    wrong_days_list = [
+                        st for st in set(staff_members) if day in st.day_exclusion_list
+                    ]
+                    wrong_shift_list = [
+                        st for st in staff_members if time in st.shift_exclusion_list
+                    ]
+                    # print('wrong day list', wrong_days_list, end='\n')
+                    for st in wrong_days_list:
+                        wrong_day_staff_assignment[st] += 4
+                        # st_shift_count = get_staff_shift_count_in_day(
+                        #     staff_member=st, assignment=assignment, query_day=day
+                        # )
+                        # print('-'*20, end='\n')
+                        # print(
+                        #     f"id-{id(st)} {st} has {1} shift on {day, time} -> therefore we will remove {4} hours from their {st.hours_worked} hours worked"
+                        # )
+                        # print('-'*20)
+                        # wrong_day_staff_assignment[st] += 4 * st_shift_count
+                        # break
+
+                    # print('start time check')
+                    for st in wrong_shift_list:
+                        # print('here')
+                        if st not in wrong_days_list:
+                            # print(
+                            #     f"{st} has {1} shift on {day, time} -> therefore we will remove {4} hours from their {st.hours_worked} hours worked"
+                            # )
+                            wrong_shift_staff_assignment[st] += 4
 
                 # reset hours worked to 0
                 for stf in staff_members:
-                    if stf not in filtered_staff:
-                        staff_list[stf].hours_worked = 0
+                    if (
+                        stf not in filtered_staff
+                        and stf in staff
+                        and stf not in wrong_days_list
+                        and stf not in wrong_shift_list
+                    ):
+                        stf.hours_worked = 0
 
                 new_assignment[day][department][time] = filtered_staff
 
-    # for stf in staff:
-    #     value = stf.id if use_id else stf.name
-    #     if value in overassigned_staff:
-    #         stf.hours_worked = 0
+    # print('overassigned', overassigned_staff)
+    # print('wrong day assignments', wrong_day_staff_assignment)
+    for stf in staff:
+        if stf in overassigned_staff:
+            stf.hours_worked = 0
+
+        if stf in wrong_day_staff_assignment:
+            stf.hours_worked = (
+                initial_hours_worked_map[stf] - wrong_day_staff_assignment[stf]
+            )
+        elif stf in wrong_shift_staff_assignment:
+            stf.hours_worked = (
+                initial_hours_worked_map[stf] - wrong_shift_staff_assignment[stf]
+            )
+
+        # else:
+        #     stf.hours_worked = initial_hours_worked_map[stf]
 
     "Departent Addition"
     new_depts = [
-        dept.department_name
+        dept
         for dept in departments
-        if dept.department_name not in assignment[next(iter(assignment))]
+        if dept not in assignment[next(iter(new_assignment))]
     ]
 
-    for day in assignment:
+    for day in new_assignment:
         for dept in new_depts:
-            assignment[day][dept] = {tme: [] for tme in shift_time}
+            new_assignment[day][dept] = {tme: [] for tme in shift_time}
 
-    "Staff addition is done automatically"
+    # print("old assignment\n", assignment)
 
-    res = backtrack(assignment, departments, staff, domains, use_id=use_id)
-    return to_normal_dict(res)
+    # print("new assignment\n", new_assignment)
+
+    # print("new stf hours worked", [(st, st.hours_worked) for st in staff])
+    # return None
+
+    ans = backtrack(new_assignment, departments, staff, domains, print_domain=True)
+    # print(ans)
+    return ans
 
 
 # if __name__ == "__main__":
-def scheduler(departments: list[DepartmentData], staff: list[StaffData], use_id=True):
+def scheduler(departments: list[DepartmentData], staff: list[StaffData]):
+
     for stf in staff:
         stf.hours_worked = 0
 
@@ -632,7 +777,8 @@ def scheduler(departments: list[DepartmentData], staff: list[StaffData], use_id=
             }
             for day in DAY_OF_WEEK
         }
-        res = backtrack(assignment, departments, staff, domains, use_id)
+
+        res = backtrack(assignment, departments, staff, domains)
         return res
         # return to_normal_dict(res)
         # print(json.dumps(to_normal_dict(assignment), indent=4))
@@ -1105,7 +1251,7 @@ if __name__ == "__main__":
 #     # tayo = StaffData("tayo", position="associate")
 #     loli = StaffData("loli", position="associate")
 #     shem = StaffData("shem", position="associate")
-#     riri = StaffData("riri", position="associate")
+#     # riri = StaffData("riri", position="associate")
 
 #     domains = {department: staff for department in departments}
 
@@ -1117,9 +1263,10 @@ if __name__ == "__main__":
 #         for day in DAY_OF_WEEK
 #     }
 #     # print(json.dumps(to_normal_dict(domains), indent=4))
-#     res = scheduler(departments, staff, use_id=False)
+#     res = scheduler(departments, staff)
 
 #     # tayo = StaffData("tayo", position="associate")
+#     # riri = StaffData("riri", position="associate")
 #     # # maybe change the below for the class to have methods to update the shift and day availability
 #     # kunle.day_exclusion_list = ["monday", "friday"]
 #     # kunle.hours_worked = 20
@@ -1127,13 +1274,15 @@ if __name__ == "__main__":
 
 #     # print(json.dumps(res, indent=2))
 #     if res:
-#         print(json.dumps(to_normal_dict(res), indent=4))
+#         # print(json.dumps(to_normal_dict(res), indent=4))
 #         print_schedule(res)
-#         # updated_res = update_schedule(res, departments, staff, use_id=False)
-#         # if updated_res:
-#         # print(json.dumps(updated_res, indent=4))
-#         #     print("\nUpdated Schedule\n".center(50, "-"))
-#         #     print_schedule(updated_res)
+#         StaffData.remove_staff(kolade)
+#         del kolade
+#         updated_res = update_schedule(res, departments, staff)
+#         if updated_res:
+#             # print(json.dumps(updated_res, indent=4))
+#             print("\n---Updated Schedule---\n")
+#             print_schedule(updated_res)
 #         # else:
 #         #     print("Can't update existing schedule as all departments filled")
 

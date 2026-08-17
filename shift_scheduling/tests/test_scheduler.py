@@ -1,5 +1,5 @@
 import pytest
-from ..app import is_feasibile, get_other_staff, get_valid_staff, is_valid
+from ..app import *
 from ..classes import StaffData, DepartmentData
 
 
@@ -288,13 +288,25 @@ class TestValidAssignments(BaseClass):
         }
 
         validity = is_valid(
-            assignment, self.shoes, "morning", self.kunle, "monday", use_id=False
+            assignment,
+            self.shoes,
+            "morning",
+            self.kunle,
+            "monday",
         )
         validity_two = is_valid(
-            assignment, self.shoes, "morning", self.bola, "monday", use_id=False
+            assignment,
+            self.shoes,
+            "morning",
+            self.bola,
+            "monday",
         )
         validity_three = is_valid(
-            assignment, self.shoes, "morning", self.kolade, "monday", use_id=False
+            assignment,
+            self.shoes,
+            "morning",
+            self.kolade,
+            "monday",
         )
         assert validity is False
         assert validity_two is False
@@ -321,8 +333,250 @@ class TestValidAssignments(BaseClass):
             },
         }
 
-        print(assignment)
         validity = is_valid(
-            assignment, self.shoes, "morning", self.kolade, "monday", use_id=False
+            assignment,
+            self.shoes,
+            "morning",
+            self.kolade,
+            "monday",
         )
         assert validity is True
+
+
+class TestUtilityFunctions(BaseClass):
+    def setup_method(self, method):
+        super().setup_method(method)
+
+        self.assignment = {
+            "monday": {
+                self.shoes: {
+                    "morning": [self.kolade, self.kunle],
+                    "afternoon": [self.kolade],
+                    "evening": [self.kolade],
+                },
+                self.ladies: {
+                    "morning": [self.riri, self.motun],
+                    "afternoon": [self.riri, self.motun],
+                    "evening": [self.riri, self.motun],
+                },
+                self.mens: {
+                    "morning": [self.core],
+                    "afternoon": [self.core],
+                    "evening": [self.core],
+                },
+            },
+        }
+
+    def test_get_staff_in_day(self):
+        staff_set = get_staff_in_day(assignment=self.assignment, query_day="monday")
+        assert self.kolade in staff_set
+        assert self.kunle in staff_set
+        assert self.motun in staff_set
+        assert self.core in staff_set
+        assert self.zara not in staff_set
+
+    def test_get_staff_shift_count_in_day(self):
+        kolade_shift_count = get_staff_shift_count_in_day(
+            staff_member=self.kolade, assignment=self.assignment, query_day="monday"
+        )
+        kunle_shift_count = get_staff_shift_count_in_day(
+            staff_member=self.kunle, assignment=self.assignment, query_day="monday"
+        )
+        assert kolade_shift_count == 3
+        assert kunle_shift_count == 1
+
+
+class TestUpdateSchedule:
+    def setup_method(self, method):
+        StaffData.staff_members.clear()
+        DepartmentData.departments.clear()
+
+        self.departments = DepartmentData.list_departments()
+        self.staff_members = StaffData.list_staff_members()
+
+        self.shoes = DepartmentData("shoes", 1)
+
+        # self.bola = StaffData("Bola", "associate")
+        self.shem = StaffData("shem", "associate")
+        self.core = StaffData("core", "associate")
+        self.loli = StaffData("loli", "associate")
+
+    def teardown_method(self, method):
+        StaffData.staff_members.clear()
+        DepartmentData.departments.clear()
+
+    # @pytest.mark.skip
+    def test_update_remove_staff(self):
+        self.bola = StaffData("Bola", "associate")
+
+        res = scheduler(self.departments, self.staff_members)
+        assigned_staff = get_assignment_staff(res)
+
+        assert self.loli in assigned_staff
+
+        StaffData.remove_staff(self.loli)  # removal here
+
+        updated_res = update_schedule(res, self.departments, self.staff_members)
+        assigned_staff = get_assignment_staff(updated_res)
+
+        assert self.loli not in assigned_staff
+
+    # @pytest.mark.skip
+    def test_update_add_staff(self):
+        res = scheduler(self.departments, self.staff_members)
+
+        self.bola = StaffData("Bola", "associate")
+        StaffData.remove_staff(self.loli)
+
+        updated_res = update_schedule(res, self.departments, self.staff_members)
+        assigned_staff = get_assignment_staff(updated_res)
+
+        assert self.bola in assigned_staff
+
+    def test_update_reduce_staff_hours(self):
+        res = scheduler(self.departments, self.staff_members)
+        self.core.contract_hours = 20
+
+        updated_res = update_schedule(res, self.departments, self.staff_members)
+        assigned_staff_occurence = [
+            stf
+            for day, val in updated_res.items()
+            for department in val.values()
+            for staff_list in department.values()
+            for stf in staff_list
+        ]
+
+        assert (
+            4 * assigned_staff_occurence.count(self.core)
+        ) <= self.core.contract_hours
+
+    def test_update_remove_department(self):
+        res = scheduler(self.departments, self.staff_members)
+        DepartmentData.remove_department(self.shoes)
+
+        self.men = DepartmentData("men", 1)
+
+        updated_res = update_schedule(
+            res, self.departments, self.staff_members, print_assignment=True
+        )
+
+        assignment_departments = [
+            dept for day, val in updated_res.items() for dept in val
+        ]
+
+        assert self.men in assignment_departments
+        assert self.shoes not in assignment_departments
+
+        # to finalize this, ypu have to remove contract hours for any deleted department
+
+    def test_update_add_department(self):
+        res = scheduler(self.departments, self.staff_members)
+
+        self.men = DepartmentData("men", 1)
+
+        self.segun = StaffData("segun", "associate")
+        self.halafia = StaffData("halafia", "associate")
+
+        updated_res = update_schedule(res, self.departments, self.staff_members)
+        assignment_departments = get_assignment_departments(updated_res)
+        assignment_staff = get_assignment_staff(updated_res)
+
+        assert updated_res is not None
+        assert all(dept in assignment_departments for dept in self.departments)
+        assert all(stf in assignment_staff for stf in self.staff_members)
+
+    def test_update_department_max_staff_reduce(self):
+        self.shoes.max_num_staff = 2
+
+        self.core.min_hours = 12
+        self.daoud = StaffData("daoud", "associate", min_hours=20)
+        self.hasan = StaffData("hasan", "associate", min_hours=20)
+        self.zara = StaffData("zara", "associate", min_hours=20)
+
+        res = scheduler(self.departments, self.staff_members)
+
+        self.shoes.max_num_staff = 1
+
+        updated_res = update_schedule(res, self.departments, self.staff_members)
+
+        assert updated_res is None
+
+    # @pytest.mark.skip
+    def test_update_min_staff_increase(self):
+
+        res = scheduler(self.departments, self.staff_members)
+
+        self.daoud = StaffData("daoud", "associate")
+        self.hasan = StaffData("hasan", "associate")
+        self.zara = StaffData("zara", "associate")
+
+        self.shoes.min_num_staff = 2
+        self.shoes.max_num_staff = 2
+
+        updated_res = update_schedule(res, self.departments, self.staff_members)
+
+        assert updated_res is not None
+
+    # @pytest.mark.skip
+    def test_update_change_staff_day_availability(self):
+        res = scheduler(self.departments, self.staff_members)
+        # print(res)
+
+        # self.zara = StaffData("zara", "associate")
+        self.loli.day_exclusion_list = ["monday", "friday"]
+        self.core.day_exclusion_list = ["wednesday"]
+
+        updated_res = update_schedule(
+            assignment=res, departments=self.departments, staff=self.staff_members
+        )
+
+        # print('-'*10)
+        # print('Test Update Change Staff Day Availability')
+        # print(json.dumps(to_normal_dict(updated_res), indent=4))
+        # print('-'*10)
+
+        assert updated_res is not None
+
+        assert self.loli not in get_staff_in_day(
+            assignment=updated_res, query_day="monday"
+        )
+        assert self.loli not in get_staff_in_day(
+            assignment=updated_res, query_day="friday"
+        )
+        assert self.core not in get_staff_in_day(
+            assignment=updated_res, query_day="wednesday"
+        )
+        
+    def test_update_change_staff_shift_availability(self):
+        # self.zara = StaffData("zara", "associate")
+        self.loli.shift_exclusion_list = ["morning"]
+        res = scheduler(self.departments, self.staff_members)
+
+        self.loli.shift_exclusion_list = ["evening"]
+        # self.core.day_exclusion_list = ["wednesday"]
+
+        updated_res = update_schedule(
+            assignment=res, departments=self.departments, staff=self.staff_members
+        )
+
+        # print('-'*10)
+        # print('Test Update Change Staff Day Availability')
+        # print(json.dumps(to_normal_dict(updated_res), indent=4))
+        # print('-'*10)
+
+        assert updated_res is not None
+
+        assert self.loli not in get_staff_in_shifts(
+            assignment=updated_res, query_shift="evening"
+        )
+        # pres =  get_staff_in_shifts(
+        #     assignment=updated_res, query_shift="evening"
+        # )
+        # print(self.loli.shift_exclusion_list, pres)
+        
+        # assert self.loli not in get_staff_in_day(
+        #     assignment=updated_res, query_day="friday"
+        # )
+        # assert self.core not in get_staff_in_day(
+        #     assignment=updated_res, query_day="wednesday"
+        # )
