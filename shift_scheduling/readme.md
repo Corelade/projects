@@ -3,7 +3,7 @@
 A tiny constraint-solver that builds a weekly rota for multiple departments and three daily shifts using plain Python. It models the problem as a constraint satisfaction problem (CSP) and searches for a valid assignment with backtracking.
 
 # What it does
-- Defines departments with max_num_staff (and optional min_num_staff).
+- Defines departments with max_staff (and optional min_staff).
 
 - Defines staff with name, role, and contract_hours.
 

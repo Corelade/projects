@@ -1,0 +1,154 @@
+/* ===========================================================================
+   print.css — mirrors docs/ui/06-print.md
+   Landscape A4 rota: line art, not washed-out colour blocks.
+   =========================================================================== */
+
+@media screen {
+  .print-only {
+    display: none !important;
+  }
+}
+
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 12mm;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  html,
+  body,
+  #root {
+    height: auto;
+    background: var(--color-print-paper);
+    color: var(--color-print-ink);
+  }
+
+  body {
+    font-size: 10pt;
+    line-height: 1.3;
+  }
+
+  /* Content fills the page — no shell, no scroll containers. */
+  .app-shell,
+  .app-main,
+  .app-content {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  /* --- rota grid as line art --------------------------------------------- */
+
+  .rota-table {
+    width: 100%;
+    border-collapse: collapse;
+    page-break-inside: auto;
+  }
+
+  /* Repeat the day header on every page. */
+  .rota-table thead {
+    display: table-header-group;
+  }
+
+  .rota-table tfoot {
+    display: table-footer-group;
+  }
+
+  .rota-table th,
+  .rota-table td {
+    border: 0.5pt solid var(--color-print-ink);
+    background: var(--color-print-paper) !important;
+    color: var(--color-print-ink) !important;
+    padding: 3pt 4pt;
+    vertical-align: top;
+  }
+
+  .rota-table th {
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  /* A department's three shift rows never split across a page break. */
+  .rota-table tr,
+  .rota-dept-group {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Department group boundary stays legible without fills. */
+  .rota-dept-start td,
+  .rota-dept-start th {
+    border-top: 1.5pt solid var(--color-print-ink);
+  }
+
+  /*
+   * The tints live on the .rota-cell button INSIDE the td, so clearing the td
+   * background is not enough — screen fills do not survive photocopying, so
+   * the grid prints as line art and leans on the row label and the glyph.
+   */
+  .rota-cell,
+  .rota-cell-morning,
+  .rota-cell-afternoon,
+  .rota-cell-evening,
+  .rota-cell-under,
+  .rota-cell-empty {
+    background: var(--color-print-paper) !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    display: block;
+  }
+
+  /* Muted greys wash out on paper. */
+  .rota-table th *,
+  .rota-table td * {
+    color: var(--color-print-ink) !important;
+  }
+
+  /* Understaffed cells rely on the glyph + count, never a tint. */
+  .rota-under,
+  .rota-cell-under .tabular {
+    font-weight: 700 !important;
+  }
+
+  /* Names wrap — an ellipsis on paper cannot be hovered. */
+  .staff-pill {
+    display: inline;
+    border: 0 !important;
+    background: none !important;
+    padding: 0 !important;
+    white-space: normal;
+  }
+
+  .staff-pill:not(:last-child)::after {
+    content: ', ';
+  }
+
+  /*
+   * Print drops the tints, and every row already names its shift — so the
+   * colour key is redundant on paper. The warning key is not.
+   */
+  .shift-legend {
+    display: block !important;
+    margin-bottom: 6pt;
+    font-size: 8pt;
+  }
+
+  .legend-shift {
+    display: none !important;
+  }
+
+  a {
+    text-decoration: none;
+    color: var(--color-print-ink);
+  }
+}

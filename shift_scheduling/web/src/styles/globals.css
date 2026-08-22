@@ -1,0 +1,94 @@
+@import './theme.css';
+@import './print.css';
+
+/* --- base ----------------------------------------------------------------- */
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Numbers must not jitter between rows — see docs/ui/01-foundations.md */
+table,
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- focus ---------------------------------------------------------------- */
+
+@utility focus-ring {
+  &:focus-visible {
+    outline: var(--ring-focus-width) solid var(--ring-focus-color);
+    outline-offset: var(--ring-focus-offset);
+  }
+}
+
+/* --- caption label -------------------------------------------------------- */
+
+@utility caption {
+  font-size: var(--text-caption);
+  line-height: var(--text-caption--line-height);
+  font-weight: 500;
+  letter-spacing: var(--tracking-caption);
+  text-transform: uppercase;
+  color: var(--color-fg-muted);
+}
+
+/* --- skeleton shimmer ------------------------------------------------------ */
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@utility skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-surface-subtle);
+  border-radius: var(--radius-sm);
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+      90deg,
+      transparent,
+      var(--color-shimmer),
+      transparent
+    );
+    animation: shimmer 1.4s infinite;
+  }
+}
+
+/* --- reduced motion -------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  /* A frozen spinner reads as a hang — slow it instead of stopping it. */
+  .spinner {
+    animation-duration: 2s !important;
+    animation-iteration-count: infinite !important;
+  }
+}

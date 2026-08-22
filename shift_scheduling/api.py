@@ -15,6 +15,8 @@ from utils import get_date_from_week
 from structures import *
 
 
+# python3 -m fastapi dev api.py for running server
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup logic

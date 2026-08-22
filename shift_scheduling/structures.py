@@ -32,6 +32,7 @@ class DepartmentCreateRequest(BaseModel):
     name: str
     min_staff: int = 1
     max_staff: int = 1
+    include: bool = True
 
 
 class ExclusionRead(SQLModel):

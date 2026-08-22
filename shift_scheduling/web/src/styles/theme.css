@@ -1,0 +1,157 @@
+/* ===========================================================================
+   theme.css — the ONLY file in this project allowed to contain literal values.
+   Mirrors docs/ui/02-tokens.md 1:1. If you change one, change the other.
+   =========================================================================== */
+
+@import 'tailwindcss';
+
+@theme {
+  /* --- font ------------------------------------------------------------- */
+  --font-sans:
+    Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+
+  /* --- type scale ------------------------------------------------------- */
+  --text-display: 1.875rem;
+  --text-display--line-height: 2.25rem;
+  --text-h1: 1.5rem;
+  --text-h1--line-height: 2rem;
+  --text-h2: 1.25rem;
+  --text-h2--line-height: 1.75rem;
+  --text-h3: 1rem;
+  --text-h3--line-height: 1.5rem;
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.25rem;
+  --text-small: 0.8125rem;
+  --text-small--line-height: 1.125rem;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1rem;
+
+  --tracking-caption: 0.04em;
+
+  /* --- neutral ramp ----------------------------------------------------- */
+  --color-slate-50: #f8fafc;
+  --color-slate-100: #f1f5f9;
+  --color-slate-200: #e2e8f0;
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+  --color-slate-800: #1e293b;
+  --color-slate-900: #0f172a;
+  --color-slate-950: #020617;
+
+  /* --- brand ramp ------------------------------------------------------- */
+  --color-brand-50: #eef2ff;
+  --color-brand-100: #e0e7ff;
+  --color-brand-200: #c7d2fe;
+  --color-brand-500: #6366f1;
+  --color-brand-600: #4f46e5;
+  --color-brand-700: #4338ca;
+  --color-brand-800: #3730a3;
+
+  /* --- semantic states -------------------------------------------------- */
+  --color-success-50: #ecfdf5;
+  --color-success-200: #a7f3d0;
+  --color-success-600: #059669;
+  --color-success-700: #047857;
+
+  --color-warning-50: #fffbeb;
+  --color-warning-200: #fde68a;
+  --color-warning-600: #d97706;
+  --color-warning-700: #b45309;
+
+  --color-danger-50: #fff1f2;
+  --color-danger-200: #fecdd3;
+  --color-danger-600: #e11d48;
+  --color-danger-700: #be123c;
+
+  --color-info-50: #f0f9ff;
+  --color-info-200: #bae6fd;
+  --color-info-600: #0284c7;
+  --color-info-700: #0369a1;
+
+  /* --- semantic aliases (prefer these in components) -------------------- */
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #f1f5f9;
+  --color-border: #e2e8f0;
+  --color-border-strong: #cbd5e1;
+  --color-fg: #0f172a;
+  --color-fg-muted: #64748b;
+  --color-fg-subtle: #94a3b8;
+  --color-fg-inverse: #ffffff;
+
+  /* --- shift identity --------------------------------------------------- */
+  --color-shift-morning-bg: #fffbeb;
+  --color-shift-morning-border: #fde68a;
+  --color-shift-morning-fg: #b45309;
+
+  --color-shift-afternoon-bg: #f0f9ff;
+  --color-shift-afternoon-border: #bae6fd;
+  --color-shift-afternoon-fg: #0369a1;
+
+  --color-shift-evening-bg: #f5f3ff;
+  --color-shift-evening-border: #ddd6fe;
+  --color-shift-evening-fg: #6d28d9;
+
+  /* --- coverage --------------------------------------------------------- */
+  --color-coverage-under-bg: #fff1f2;
+  --color-coverage-under-border: #fecdd3;
+  --color-coverage-at-min-bg: #fffbeb;
+  --color-coverage-empty-bg: #f8fafc;
+
+  /* --- overlays --------------------------------------------------------- */
+  --color-backdrop: rgb(15 23 42 / 0.3);
+  --color-shimmer: rgb(255 255 255 / 0.6);
+
+  /* --- print ink -------------------------------------------------------- */
+  /* Paper is always black on white regardless of theme, but it still goes
+     through a token so the drift grep stays absolute. */
+  --color-print-ink: #000;
+  --color-print-paper: #fff;
+
+  /* --- named sizes ------------------------------------------------------ */
+  --size-row: 3rem;
+  --size-row-header: 2.5rem;
+  --size-control: 2.5rem;
+  --size-control-sm: 2rem;
+  --size-topbar: 4rem;
+  --size-sidebar: 16.25rem;
+  --size-rota-cell-min: 3.5rem;
+  --size-drawer: 30rem;
+
+  /* --- radius ----------------------------------------------------------- */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+
+  /* --- shadow ----------------------------------------------------------- */
+  --shadow-xs: 0 1px 2px rgb(15 23 42 / 0.04);
+  --shadow-sm:
+    0 1px 3px rgb(15 23 42 / 0.08), 0 1px 2px rgb(15 23 42 / 0.04);
+  --shadow-md: 0 10px 24px rgb(15 23 42 / 0.1);
+
+  /* --- motion ----------------------------------------------------------- */
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+  --duration-slow: 280ms;
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* --- layering --------------------------------------------------------- */
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-dropdown: 20;
+  --z-backdrop: 30;
+  --z-overlay: 40;
+  --z-toast: 50;
+}
+
+/* Focus ring — one definition, used everywhere via .focus-ring */
+@theme {
+  --ring-focus-color: #6366f1;
+  --ring-focus-width: 2px;
+  --ring-focus-offset: 2px;
+}

@@ -1,0 +1,18 @@
+/* Fixed column widths keep the range column from collapsing when department
+   names are short. */
+
+.departments-table {
+  table-layout: fixed;
+  min-width: 40rem;
+}
+
+.departments-table .col-name {
+  width: 46%;
+}
+.departments-table .col-min,
+.departments-table .col-max {
+  width: 16%;
+}
+.departments-table .col-actions {
+  width: 22%;
+}

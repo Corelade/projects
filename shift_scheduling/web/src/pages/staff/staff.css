@@ -1,0 +1,31 @@
+/* Column widths — table-layout: fixed with explicit widths keeps the roster
+   from reflowing as names change length. Tailwind expresses this poorly. */
+
+.staff-table {
+  table-layout: fixed;
+  min-width: 56rem;
+}
+
+.staff-table .col-name {
+  width: 26%;
+}
+.staff-table .col-position {
+  width: 16%;
+}
+.staff-table .col-contract {
+  width: 14%;
+}
+.staff-table .col-min {
+  width: 12%;
+}
+.staff-table .col-unavailable {
+  width: 20%;
+}
+.staff-table .col-actions {
+  width: 12%;
+}
+
+/* Names wrap rather than truncate — a clipped name is a wrong name. */
+.staff-table .cell-name {
+  overflow-wrap: anywhere;
+}
