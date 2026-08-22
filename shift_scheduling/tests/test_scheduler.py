@@ -16,7 +16,7 @@ class BaseClass:
 
         self.shoes = DepartmentData("shoes", 1)
         self.mens = DepartmentData("men", 1)
-        self.ladies = DepartmentData("ladies", max_num_staff=2, min_num_staff=2)
+        self.ladies = DepartmentData("ladies", max_staff=2, min_staff=2)
         self.home = DepartmentData("home", 1)
 
         self.kolade = StaffData("Kolade", "associate", shift_exclusion_list=["evening"])
@@ -253,7 +253,7 @@ def test_get_other_staff():
         },
     }
     shoes = DepartmentData("shoes", 1)
-    ladies = DepartmentData("ladies", max_num_staff=2, min_num_staff=2)
+    ladies = DepartmentData("ladies", max_staff=2, min_staff=2)
 
     res1 = ["kunle", "motun", "core", "star"]
     res2 = ["bola", "core", "star"]
@@ -486,7 +486,7 @@ class TestUpdateSchedule:
         assert all(stf in assignment_staff for stf in self.staff_members)
 
     def test_update_department_max_staff_reduce(self):
-        self.shoes.max_num_staff = 2
+        self.shoes.max_staff = 2
 
         self.core.min_hours = 12
         self.daoud = StaffData("daoud", "associate", min_hours=20)
@@ -495,7 +495,7 @@ class TestUpdateSchedule:
 
         res = scheduler(self.departments, self.staff_members)
 
-        self.shoes.max_num_staff = 1
+        self.shoes.max_staff = 1
 
         updated_res = update_schedule(res, self.departments, self.staff_members)
 
@@ -510,8 +510,8 @@ class TestUpdateSchedule:
         self.hasan = StaffData("hasan", "associate")
         self.zara = StaffData("zara", "associate")
 
-        self.shoes.min_num_staff = 2
-        self.shoes.max_num_staff = 2
+        self.shoes.min_staff = 2
+        self.shoes.max_staff = 2
 
         updated_res = update_schedule(res, self.departments, self.staff_members)
 

@@ -154,7 +154,7 @@ def is_feasibile(
     shifts_to_fill = 0
     # max_shifts_to_fill = 0
     for dept in depts:
-        req_hours = dept.min_num_staff * NUM_SHIFTS
+        req_hours = dept.min_staff * NUM_SHIFTS
         shifts_to_fill += req_hours
 
     # check for required hours and staff hours
@@ -163,7 +163,7 @@ def is_feasibile(
     """check for average working hour is within capacity"""
     # avail_hours = len(depts) * NUM_HOURS * len(DAY_OF_WEEK)
     required_hours = sum(
-        dept.min_num_staff * NUM_HOURS * len(DAY_OF_WEEK) for dept in depts
+        dept.min_staff * NUM_HOURS * len(DAY_OF_WEEK) for dept in depts
     )
     available_capacity = sum(stf.contract_hours for stf in staff_arr)
     min_required_hours = sum(stf.min_hours for stf in staff_arr)
@@ -201,7 +201,7 @@ def is_feasibile(
             print("Not enough staff for", day)
             return False
 
-    total_min_staff = sum(department.min_num_staff for department in depts)
+    total_min_staff = sum(department.min_staff for department in depts)
 
     if total_min_staff > len(staff_arr):
         print(
@@ -237,7 +237,7 @@ def get_other_staff(
         for day, val in assignment.items()
         for dept, shifts in val.items()
         if day == cur_day  # check for current day
-        # if dept != domain.department_name  # only other departments
+        # if dept != domain.name  # only other departments
         if dept != domain  # only other departments
         for staff_list in shifts.values()  # all shifts
         for staff in staff_list
@@ -275,7 +275,7 @@ def is_valid(
     # print(f'CHECKING VALIDATION FOR "{domain}"')
     # print(dict(assignment))
     # print("Num of staff in assignment", len(assignment[domain]))
-    # print("Max allowable staff", domain.max_num_staff, "\n")
+    # print("Max allowable staff", domain.max_staff, "\n")
 
     # if not staff.is_valid():
     #     print(staff, staff.hours_worked, end='\n')
@@ -284,34 +284,34 @@ def is_valid(
     #     return False
 
     # one domain can not have more than its max_cap
-    # if domain.max_num_staff < len(assignment[day][domain.department_name][tme]):
-    if domain.max_num_staff < len(assignment[day][domain][tme]):
+    # if domain.max_staff < len(assignment[day][domain.name][tme]):
+    if domain.max_staff < len(assignment[day][domain][tme]):
         # print('here')
         # print(
-        #     f"Error -> {domain} requires {domain.max_num_staff} but got {len(assignment[domain][tme])}",
+        #     f"Error -> {domain} requires {domain.max_staff} but got {len(assignment[domain][tme])}",
         #     "\n",
         # )
         return False
 
     # same staff cant be assigned to same domain more than once
     # print(
-    #     assignment[domain.department_name],
+    #     assignment[domain.name],
     #     ":",
-    #     assignment[domain.department_name][tme]
+    #     assignment[domain.name][tme]
     #     "->",
-    #     assignment[domain.department_name][tme].count(staff.id),
+    #     assignment[domain.name][tme].count(staff.id),
     #     "\n",
     # )
     """if use_id:
-        staff_count = assignment[day][domain.department_name][tme].count(staff.id)
+        staff_count = assignment[day][domain.name][tme].count(staff.id)
     else:
-        staff_count = assignment[day][domain.department_name][tme].count(staff.name)"""
+        staff_count = assignment[day][domain.name][tme].count(staff.name)"""
 
     staff_count = assignment[day][domain][tme].count(staff)
     if staff_count > 1:
         # print('hereeee')
         # print(
-        #     f"Error -> StaffData:{staff} appears {assignment[domain.department_name][tme].count(staff)} times",
+        #     f"Error -> StaffData:{staff} appears {assignment[domain.name][tme].count(staff)} times",
         #     "\n",
         # )
         return False
@@ -372,7 +372,7 @@ def backtrack(
     check for the required number of staff is available
     """
     min_required_staff = sum(
-        dept.min_num_staff * len(shift_time) * len(DAY_OF_WEEK) for dept in departments
+        dept.min_staff * len(shift_time) * len(DAY_OF_WEEK) for dept in departments
     )
     # print(min_required_staff)
 
@@ -403,7 +403,7 @@ def backtrack(
     # if all department.is_valid() terminate recurs i.e if all depts has required num of staff
 
     # Choose unassigned domain | domain that isnt valid
-    # valid_domains = [v for v in domains if len(assignment[v]) < v.max_num_staff]
+    # valid_domains = [v for v in domains if len(assignment[v]) < v.max_staff]
     valid_domains = [
         (day, dom, tme)
         for day, val in domains.items()
@@ -412,15 +412,15 @@ def backtrack(
         if (
             (
                 tme in dom.priority
-                # and len(assignment[day][dom.department_name][tme]) < dom.max_num_staff
-                and len(assignment[day][dom][tme]) < dom.max_num_staff
+                # and len(assignment[day][dom.name][tme]) < dom.max_staff
+                and len(assignment[day][dom][tme]) < dom.max_staff
             )
             or (
                 tme not in dom.priority
-                # and len(assignment[day][dom.department_name][tme]) < dom.min_num_staff
-                and len(assignment[day][dom][tme]) < dom.min_num_staff
+                # and len(assignment[day][dom.name][tme]) < dom.min_staff
+                and len(assignment[day][dom][tme]) < dom.min_staff
             )
-            # len(assignment[day][dom.department_name][tme]) < dom.max_num_staff
+            # len(assignment[day][dom.name][tme]) < dom.max_staff
         )
     ]
     # print(valid_domains)
@@ -434,7 +434,7 @@ def backtrack(
         or (len(assigned_staff_count) == len(staff))
         and (num_assigned_staff > min_required_staff)
         and all(
-            # len(assignment[day][dom.department_name][tme]) > 0
+            # len(assignment[day][dom.name][tme]) > 0
             len(assignment[day][dom][tme]) > 0
             for day, val in domains.items()
             for dom in val
@@ -457,7 +457,7 @@ def backtrack(
     weights = [
         (
             10
-            # if (len(assignment[day][dom.department_name][tme]) == 0)
+            # if (len(assignment[day][dom.name][tme]) == 0)
             if (len(assignment[day][dom][tme]) == 0)
             else 1 / len(assignment[day][dom][tme])
         )
@@ -530,20 +530,20 @@ def backtrack(
         # print("first", to_normal_dict(new_assignment))
 
         """if use_id:
-            new_assignment[day][dom.department_name][tme].append(stf.id)
+            new_assignment[day][dom.name][tme].append(stf.id)
         else:
-            new_assignment[day][dom.department_name][tme].append(stf.name)"""
+            new_assignment[day][dom.name][tme].append(stf.name)"""
 
         new_assignment[day][dom][tme].append(stf)
 
-        # print(day, dom.department_name, tme, stf)
+        # print(day, dom.name, tme, stf)
         # print(new_assignment)
         # time.sleep(10)
 
         # for other_tme in ['morning', 'afternoon', 'evening']:
         #     # if other_tme != tme:
         #     if (day, dom, other_tme) in valid_domains:
-        #         new_assignment[day][dom.department_name][other_tme].append(stf.id)
+        #         new_assignment[day][dom.name][other_tme].append(stf.id)
         # print("Trying", new_assignment, "\n")
         # print(
         #     f"Second -> New Assignment of {stf} to ({dom}, {tme}) -> {to_normal_dict(new_assignment)}",
@@ -566,8 +566,8 @@ def backtrack(
                 return result
         stf.hours_worked -= 4
         # print("before", to_normal_dict(new_assignment), "\n")
-        # print(f"Removing {stf.id} from {dom.department_name} - {tme}")
-        # new_assignment[dom.department_name][tme].remove(stf)
+        # print(f"Removing {stf.id} from {dom.name} - {tme}")
+        # new_assignment[dom.name][tme].remove(stf)
         # print("after", to_normal_dict(new_assignment))
         # i += 1
         # if i == 2:
@@ -592,7 +592,7 @@ def update_schedule(
     - Department Addition ✅
     - Change in contract hours ✅
     - Department modifications
-        - max_num_staff reduction ✅
+        - max_staff reduction ✅
         - min_num staff increase ✅
     - Change in time/day availability
         - day availability ✅
@@ -642,7 +642,7 @@ def update_schedule(
                 removed_departments.add(department)
                 continue
 
-            # print('in for loop', [dept.max_num_staff for dept in departments])
+            # print('in for loop', [dept.max_staff for dept in departments])
 
             new_assignment[day][department] = {}
 
@@ -654,8 +654,8 @@ def update_schedule(
                 wrong_days_list = []
                 wrong_shift_list = []
 
-                if (department.min_num_staff > len(staff_members)) or (
-                    department.max_num_staff < len(staff_members)
+                if (department.min_staff > len(staff_members)) or (
+                    department.max_staff < len(staff_members)
                 ):
                     filtered_staff = []
 
@@ -852,8 +852,8 @@ if __name__ == "__main__":
         create_new_instance: bool = True,
     ):
         print(f"\n{title}")
-        department_name = input("Enter Department Name: ").strip().lower()
-        if department_name == "c":
+        name = input("Enter Department Name: ").strip().lower()
+        if name == "c":
             return None
         min_staff = validate_input("Enter Minimum number of staff: ")
         if min_staff is None:
@@ -872,15 +872,15 @@ if __name__ == "__main__":
             try:
                 DepartmentData(
                     id=id,
-                    department_name=department_name,
-                    min_num_staff=min_staff,
-                    max_num_staff=max_staff,
+                    name=name,
+                    min_staff=min_staff,
+                    max_staff=max_staff,
                 )
                 return True
             except ValueError as e:
                 print("\n", str(e))
 
-        return department_name, min_staff, max_staff
+        return name, min_staff, max_staff
 
     def create_staff(
         id: int = None,
@@ -1008,7 +1008,7 @@ if __name__ == "__main__":
             dept = [
                 department
                 for department in departments
-                if department.department_name == dept_name
+                if department.name == dept_name
             ]
 
         if dept:
@@ -1100,7 +1100,7 @@ if __name__ == "__main__":
                         break
                     if dept:
                         print(
-                            f"\nDepartment Name -> {dept.department_name}\nMinimum Number of Staff -> {dept.min_num_staff}\nMaximum Number of Staff -> {dept.max_num_staff}"
+                            f"\nDepartment Name -> {dept.name}\nMinimum Number of Staff -> {dept.min_staff}\nMaximum Number of Staff -> {dept.max_staff}"
                         )
                         while True:
                             result = create_dept(
@@ -1111,9 +1111,9 @@ if __name__ == "__main__":
                                 break
                             new_name, new_min, new_max = result
                             if new_name:
-                                dept.department_name = new_name
-                                dept.min_num_staff = new_min
-                                dept.max_num_staff = new_max
+                                dept.name = new_name
+                                dept.min_staff = new_min
+                                dept.max_staff = new_max
                                 break
 
                             print("\n")
@@ -1195,7 +1195,7 @@ if __name__ == "__main__":
             elif action_prompt == "7":
                 # TODO ask if to use id or not - default to name
                 # res = scheduler(departments, staff)
-                scheduler_result = scheduler(departments, staff, use_id=False)
+                scheduler_result = scheduler(departments, staff)
                 # print("")
                 # print(res)
                 # print("")
@@ -1211,7 +1211,7 @@ if __name__ == "__main__":
                     continue
 
                 updated_result = update_schedule(
-                    scheduler_result, departments, staff, use_id=False
+                    scheduler_result, departments, staff
                 )
                 if updated_result:
                     print_schedule(updated_result)
@@ -1231,7 +1231,7 @@ if __name__ == "__main__":
 #     staff: list[StaffData] = StaffData.list_staff_members()
 
 #     # create departments
-#     # ladies = DepartmentData("ladies", 2, min_num_staff=2)
+#     # ladies = DepartmentData("ladies", 2, min_staff=2)
 #     # cashier = DepartmentData("cashier", 5, 2)
 #     shoes = DepartmentData("shoes", 1)
 #     home = DepartmentData("home", 2)

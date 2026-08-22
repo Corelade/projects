@@ -147,19 +147,19 @@ class DepartmentData:
 
     def __init__(
         self,
-        department_name: str,
-        max_num_staff: int,
-        min_num_staff: int = 1,
+        name: str,
+        max_staff: int,
+        min_staff: int = 1,
         id: int = None,
     ):
         self.id = id
-        self.department_name = department_name.lower()
-        self.max_num_staff = max_num_staff
-        self.min_num_staff = min_num_staff
+        self.name = name.lower()
+        self.max_staff = max_staff
+        self.min_staff = min_staff
         self.priority = ["afternoon", "evening"]
         self.staff_list = []
-        if not self.department_name in [
-            d.department_name for d in DepartmentData.departments
+        if not self.name in [
+            d.name for d in DepartmentData.departments
         ]:
             # raise ValueError("Department name exists already.")
             if not self.id:
@@ -176,11 +176,11 @@ class DepartmentData:
         self.staff_list.append(staff)
 
     def is_valid(self, num_staff):
-        # return self.min_num_staff <= len(self.staff_list) <= self.max_num_staff
-        return self.min_num_staff <= num_staff <= self.max_num_staff
+        # return self.min_staff <= len(self.staff_list) <= self.max_staff
+        return self.min_staff <= num_staff <= self.max_staff
 
     def is_full(self):
-        return self.min_num_staff == len(self.staff_list)
+        return self.min_staff == len(self.staff_list)
     
     @classmethod
     def remove_department(cls, obj):
@@ -188,11 +188,11 @@ class DepartmentData:
         return cls.departments
 
     def __str__(self):
-        return self.department_name
+        return self.name
         # return self.id
 
     def __repr__(self) -> str:
-        return self.department_name
+        return self.name
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, DepartmentData):
@@ -203,4 +203,4 @@ class DepartmentData:
         return False
 
     def __hash__(self) -> int:
-        return hash(self.department_name)
+        return hash(self.name)

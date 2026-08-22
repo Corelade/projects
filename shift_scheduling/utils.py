@@ -96,11 +96,11 @@ def initialize():
                         day_exclusions.append(exclusion.value)
             _ = StaffData(
                 staff.first_name,
-                staff.id,
                 staff.position,
                 shift_exclusions,
                 day_exclusions,
                 staff.contract_hours,
+                staff.id,
             )
 
         staff_list = StaffData.list_staff_members()
@@ -108,9 +108,9 @@ def initialize():
         department_statement = db.exec(select(Department)).all()
         for department in department_statement:
             _ = DepartmentData(
-                department_name=department.name,
-                min_num_staff=department.min_staff,
-                max_num_staff=department.max_staff,
+                name=department.name,
+                min_staff=department.min_staff,
+                max_staff=department.max_staff,
             )
 
         department_list = DepartmentData.list_departments()
@@ -125,7 +125,7 @@ def create_schedule():
         staff_list, department_list = initialize()
         # print(staff_list, department_list)
         # print('')
-        res = scheduler(department_list, staff_list, use_id=False)
+        res = scheduler(department_list, staff_list)
 
         if res:
             staff_map = {staff.id: staff for staff in db.exec(select(Staff)).all()}
