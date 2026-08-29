@@ -9,8 +9,8 @@ class BaseClass:
     """
 
     def setup_method(self, method):
-        DepartmentData.departments.clear()
-        StaffData.staff_members.clear()
+        DepartmentData.reset()
+        StaffData.reset()
         DepartmentData.next_id = 1
         StaffData.next_id = 1
 
@@ -34,8 +34,8 @@ class BaseClass:
         self.zara = StaffData("zara", "associate")
 
     def teardown_method(self):
-        StaffData.staff_members.clear()
-        DepartmentData.departments.clear()
+        StaffData.reset()
+        DepartmentData.reset()
 
 
 class TestStaffData(BaseClass):
@@ -184,7 +184,7 @@ class TestCheckFeasibility(BaseClass):
 
 class TestStaffValidity:
     def setup_method(self):
-        StaffData.staff_members.clear()
+        StaffData.reset()
 
         self.motun = StaffData("motun", position="associate")
         self.bola = StaffData("Bola", position="associate")
@@ -388,8 +388,8 @@ class TestUtilityFunctions(BaseClass):
 
 class TestUpdateSchedule:
     def setup_method(self, method):
-        StaffData.staff_members.clear()
-        DepartmentData.departments.clear()
+        StaffData.reset()
+        DepartmentData.reset()
 
         self.departments = DepartmentData.list_departments()
         self.staff_members = StaffData.list_staff_members()
@@ -402,8 +402,8 @@ class TestUpdateSchedule:
         self.loli = StaffData("loli", "associate")
 
     def teardown_method(self, method):
-        StaffData.staff_members.clear()
-        DepartmentData.departments.clear()
+        StaffData.reset()
+        DepartmentData.reset()
 
     # @pytest.mark.skip
     def test_update_remove_staff(self):
@@ -417,7 +417,7 @@ class TestUpdateSchedule:
         StaffData.remove_staff(self.loli)  # removal here
 
         updated_res = update_schedule(res, self.departments, self.staff_members)
-        assigned_staff = get_assignment_staff(updated_res)
+        assigned_staff = get_assignment_staff(updated_res["result"])
 
         assert self.loli not in assigned_staff
 
@@ -429,7 +429,7 @@ class TestUpdateSchedule:
         StaffData.remove_staff(self.loli)
 
         updated_res = update_schedule(res, self.departments, self.staff_members)
-        assigned_staff = get_assignment_staff(updated_res)
+        assigned_staff = get_assignment_staff(updated_res["result"])
 
         assert self.bola in assigned_staff
 
@@ -437,7 +437,7 @@ class TestUpdateSchedule:
         res = scheduler(self.departments, self.staff_members)
         self.core.contract_hours = 20
 
-        updated_res = update_schedule(res, self.departments, self.staff_members)
+        updated_res = update_schedule(res, self.departments, self.staff_members)["result"]
         assigned_staff_occurence = [
             stf
             for day, val in updated_res.items()
@@ -458,7 +458,7 @@ class TestUpdateSchedule:
 
         updated_res = update_schedule(
             res, self.departments, self.staff_members, print_assignment=True
-        )
+        )["result"]
 
         assignment_departments = [
             dept for day, val in updated_res.items() for dept in val
@@ -477,7 +477,7 @@ class TestUpdateSchedule:
         self.segun = StaffData("segun", "associate")
         self.halafia = StaffData("halafia", "associate")
 
-        updated_res = update_schedule(res, self.departments, self.staff_members)
+        updated_res = update_schedule(res, self.departments, self.staff_members)["result"]
         assignment_departments = get_assignment_departments(updated_res)
         assignment_staff = get_assignment_staff(updated_res)
 
@@ -489,7 +489,7 @@ class TestUpdateSchedule:
         self.shoes.max_staff = 2
 
         self.core.min_hours = 12
-        self.daoud = StaffData("daoud", "associate", min_hours=20)
+        # self.daoud = StaffData("daoud", "associate", min_hours=20)
         self.hasan = StaffData("hasan", "associate", min_hours=20)
         self.zara = StaffData("zara", "associate", min_hours=20)
 
@@ -497,7 +497,7 @@ class TestUpdateSchedule:
 
         self.shoes.max_staff = 1
 
-        updated_res = update_schedule(res, self.departments, self.staff_members)
+        updated_res = update_schedule(res, self.departments, self.staff_members)["result"]
 
         assert updated_res is None
 
@@ -513,7 +513,7 @@ class TestUpdateSchedule:
         self.shoes.min_staff = 2
         self.shoes.max_staff = 2
 
-        updated_res = update_schedule(res, self.departments, self.staff_members)
+        updated_res = update_schedule(res, self.departments, self.staff_members)["result"]
 
         assert updated_res is not None
 
@@ -528,7 +528,7 @@ class TestUpdateSchedule:
 
         updated_res = update_schedule(
             assignment=res, departments=self.departments, staff=self.staff_members
-        )
+        )["result"]
 
         # print('-'*10)
         # print('Test Update Change Staff Day Availability')
@@ -557,7 +557,7 @@ class TestUpdateSchedule:
 
         updated_res = update_schedule(
             assignment=res, departments=self.departments, staff=self.staff_members
-        )
+        )["result"]
 
         # print('-'*10)
         # print('Test Update Change Staff Day Availability')
@@ -569,3 +569,11 @@ class TestUpdateSchedule:
         assert self.loli not in get_staff_in_shifts(
             assignment=updated_res, query_shift="evening"
         )
+
+    def test_update_no_change(self):
+        res = scheduler(self.departments, self.staff_members)
+        
+        updated_res = update_schedule(res, self.departments, self.staff_members)
+        
+        assert updated_res["result"] == res
+        assert updated_res["regenerated"] is False

@@ -35,6 +35,8 @@ class StaffData:
         contract_hours: int = 40,
         min_hours: int = 8,
         id: int | None = None,
+        *,
+        unavailable:bool = False
     ):
         self.id = id
         # self.name = name
@@ -46,6 +48,7 @@ class StaffData:
         self.shift_exclusion_list = shift_exclusion_list
         self.day_exclusion_list = day_exclusion_list
         self.working = False
+        self.unavailable = unavailable
 
         # contract hours must be at least 8 hours
         if self.contract_hours < 8:
@@ -74,12 +77,17 @@ class StaffData:
     @min_hours.setter
     def min_hours(self, value: int):
         if not (8 <= value <= self.contract_hours):
-            raise ValueError(f"min_hours must be between 8 and {self.contract_hours}.")
+            raise ValueError(f"min_hours for {self.name} must be between 8 and {self.contract_hours}.")
         self._min_hours = value
 
     @classmethod
     def list_staff_members(cls):
         return cls.staff_members
+    
+    @classmethod
+    def reset(cls):
+        cls.staff_members.clear()
+
 
     def add_hours(self):
         self.hours_worked += 4
@@ -186,6 +194,10 @@ class DepartmentData:
     def remove_department(cls, obj):
         cls.departments.remove(obj)
         return cls.departments
+    
+    @classmethod
+    def reset(cls):
+        cls.departments.clear()
 
     def __str__(self):
         return self.name
