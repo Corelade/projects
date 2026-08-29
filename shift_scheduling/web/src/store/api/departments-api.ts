@@ -44,7 +44,7 @@ export const departmentsApi = baseApi.injectEndpoints({
         method: METHODS.update,
         body,
       }),
-      extraOptions: { mock: 'departments.update' },
+      // extraOptions: { mock: 'departments.update' },
       invalidatesTags: (_r, _e, arg) => [
         { type: 'Department', id: arg.id },
         { type: 'Department', id: 'LIST' },
@@ -58,7 +58,7 @@ export const departmentsApi = baseApi.injectEndpoints({
         method: METHODS.remove,
         body: { id },
       }),
-      extraOptions: { mock: 'departments.remove' },
+      // extraOptions: { mock: 'departments.remove' },
       invalidatesTags: [{ type: 'Department', id: 'LIST' }, 'Schedule'],
     }),
   }),

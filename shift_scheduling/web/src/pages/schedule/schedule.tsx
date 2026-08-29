@@ -9,7 +9,7 @@ import Icon from '@/components/icon/icon'
 import Layout from '@/components/layout/layout'
 import Skeleton from '@/components/skeleton/skeleton'
 import WeekPicker from '@/components/week-picker/week-picker'
-import { formatDateTime, formatWeekRange } from '@/lib/dates'
+import { currentWeekStart, formatDateTime, formatWeekRange } from '@/lib/dates'
 import { useAppDispatch, useAppSelector } from '@/store'
 import { errorMessage } from '@/store/api/base-api'
 import { useGetDepartmentsQuery } from '@/store/api/departments-api'
@@ -83,6 +83,10 @@ export default function SchedulePage() {
     [departments.data],
   )
 
+  // Rotas are only generated for weeks that haven't started. The current week is
+  // already in play, so it's edited cell by cell rather than regenerated wholesale.
+  const isLockedWeek = weekStart <= currentWeekStart()
+
   async function runGenerate() {
     setConfirmRegenerate(false)
     try {
@@ -146,7 +150,7 @@ export default function SchedulePage() {
             variant="primary"
             iconLeft={<Icon name="sparkles" size={16} />}
             loading={generateState.isLoading}
-            disabled={isLoading || isError}
+            disabled={isLoading || isError || isLockedWeek}
             onClick={() => (hasRota ? setConfirmRegenerate(true) : runGenerate())}
           >
             {hasRota ? 'Regenerate' : 'Generate'}
@@ -215,6 +219,7 @@ export default function SchedulePage() {
                   variant="primary"
                   iconLeft={<Icon name="sparkles" size={16} />}
                   loading={generateState.isLoading}
+                  disabled={isLockedWeek}
                   onClick={runGenerate}
                 >
                   Generate rota

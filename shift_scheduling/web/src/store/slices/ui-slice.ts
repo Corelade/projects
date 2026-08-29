@@ -1,6 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { Staff } from '@/types'
-import { currentWeekStart } from '@/lib/dates'
+import { currentWeekStart, weekEnd } from '@/lib/dates'
 
 export interface Toast {
   id: string
@@ -16,6 +16,7 @@ export interface SortState {
 interface UiState {
   /** ISO Monday. Mirrored to ?week= by the schedule page. */
   selectedWeekStart: string
+  // selectedWeekEnd: string
   staffSearch: string
   departmentSearch: string
   staffSort: SortState
@@ -29,6 +30,7 @@ interface UiState {
  */
 const initialState: UiState = {
   selectedWeekStart: currentWeekStart(),
+  // selectedWeekEnd: weekEnd(currentWeekStart()),
   staffSearch: '',
   departmentSearch: '',
   staffSort: { key: 'name', dir: 'asc' },

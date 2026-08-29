@@ -98,7 +98,7 @@ export default function StaffForm({
             <Input
               {...p}
               value={value.first_name}
-              placeholder="Kolade"
+              placeholder="John"
               disabled={submitting}
               invalid={Boolean(errorFor('first_name'))}
               onChange={(e) => patch('first_name', e.target.value)}
@@ -122,14 +122,19 @@ export default function StaffForm({
         </Field>
       </div>
 
-      <Field id="email" label="Email" required error={errorFor('email')}>
+      <Field
+        id="email"
+        label="Email"
+        required
+        hint={initial ? "Email can't be changed after creation." : undefined}
+        error={errorFor('email')} >
         {(p) => (
           <Input
             {...p}
             type="email"
             value={value.email}
-            placeholder="kolade@example.com"
-            disabled={submitting}
+            placeholder="john@example.com"
+            disabled={submitting || Boolean(initial)}
             invalid={Boolean(errorFor('email'))}
             onChange={(e) => patch('email', e.target.value)}
             onBlur={() => markTouched('email')}

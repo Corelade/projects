@@ -1,15 +1,31 @@
 import type { ScheduleCell, ScheduleWeek, UpdateCellRequest } from '@/types'
 import { baseApi } from './base-api'
 import { ENDPOINTS, METHODS } from './endpoints'
+import type { Day, Shift } from '../../types/common'
+import type { Assignment } from '@/types'
+
+
+interface RawScheduleResponse {
+  week_start: string
+  week_end: string
+  generated_at: string | null
+  schedule: Record<
+    string,
+    Record<
+      string,
+      Record<Shift, Assignment[]>
+    >
+  >
+}
 
 export const scheduleApi = baseApi.injectEndpoints({
   endpoints: (build) => ({
     getWeek: build.query<ScheduleWeek, string>({
       query: (weekStart) => ({
         url: ENDPOINTS.schedule.week(weekStart),
-        body: { week_start: weekStart },
+        // body: { week_start: weekStart }, 
       }),
-      extraOptions: { mock: 'schedule.week' },
+      // extraOptions: { mock: 'schedule.week' },
       /**
        * The solver's own result is nested day -> department -> shift -> [name]
        * and, via to_normal_dict (app.py:111), carries no IDs. The UI needs IDs
@@ -18,6 +34,30 @@ export const scheduleApi = baseApi.injectEndpoints({
        *
        *   transformResponse: (raw: NestedSchedule) => flattenWeek(raw)
        */
+
+      transformResponse: (raw: RawScheduleResponse): ScheduleWeek => {
+        const cells: ScheduleCell[] = []
+
+        for (const [day, departments] of Object.entries(raw.schedule)) {
+          for (const [departmentId, shifts] of Object.entries(departments)) {
+            for (const [shift, staff] of Object.entries(shifts)) {
+              cells.push({
+                department_id: Number(departmentId),
+                day: day as Day,
+                shift: shift as Shift,
+                staff,
+              })
+            }
+          }
+        }
+
+        return {
+          week_start: raw.week_start,
+          week_end: raw.week_end,
+          generated_at: raw.generated_at,
+          cells,
+        }
+      },
       providesTags: (_r, _e, weekStart) => [{ type: 'Schedule', id: weekStart }],
     }),
 
@@ -27,7 +67,7 @@ export const scheduleApi = baseApi.injectEndpoints({
         method: METHODS.generate,
         body: { week_start: weekStart },
       }),
-      extraOptions: { mock: 'schedule.generate' },
+      // extraOptions: { mock: 'schedule.generate' },
       invalidatesTags: (_r, _e, weekStart) => [
         { type: 'Schedule', id: weekStart },
       ],
@@ -39,7 +79,7 @@ export const scheduleApi = baseApi.injectEndpoints({
         method: METHODS.updateCell,
         body,
       }),
-      extraOptions: { mock: 'schedule.updateCell' },
+      // extraOptions: { mock: 'schedule.updateCell' },
 
       /**
        * Optimistic: assigning someone should feel like moving a magnet on a
