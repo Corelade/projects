@@ -1,6 +1,6 @@
 from sqlmodel import Field, Relationship, SQLModel
 from enum import Enum
-from datetime import date
+from datetime import date, datetime
 from pydantic import EmailStr, ConfigDict, model_validator
 
 
@@ -20,9 +20,14 @@ class Staff(SQLModel, table=True):
     contract_hours: int = Field(default=40)
     min_hours: int = Field(default=8)
     age: int | None = Field(nullable=True, default=None)
+    deleted: bool = Field(default=False)
 
     exclusions: list["Exclusion"] = Relationship(back_populates="staff")
     schedules: list["Schedule"] = Relationship(back_populates="staff")
+    
+    weekly_hours_worked: list["StaffWeeklyHours"] = Relationship(
+        back_populates="staff"
+    )
 
 
 class Exclusion(SQLModel, table=True):
@@ -40,7 +45,7 @@ class Department(SQLModel, table=True):
     name: str = Field(unique=True)
     min_staff: int = Field(default=1)
     max_staff: int = Field(default=1)
-    include: bool = Field(default=True)
+    deleted: bool = Field(default=False)
 
     schedules: list["Schedule"] = Relationship(back_populates="department")
 
@@ -50,8 +55,13 @@ class ScheduleWeek(SQLModel, table=True):
     week_start: date
     week_end: date
     complete: bool = Field(default=False)
+    generated_at: datetime = Field(nullable=True, default=datetime.now())
 
     schedules: list["Schedule"] = Relationship(back_populates="week")
+
+    staff_weekly_hours_worked: list["StaffWeeklyHours"] = Relationship(
+        back_populates="week"
+    )
 
 
 class Schedule(SQLModel, table=True):
@@ -69,3 +79,15 @@ class Schedule(SQLModel, table=True):
     week: ScheduleWeek = Relationship(back_populates="schedules")
     staff: Staff = Relationship(back_populates="schedules")
     department: Department = Relationship(back_populates="schedules")
+
+
+class StaffWeeklyHours(SQLModel, table=True):
+    id: int | None = Field(primary_key=True, default=None)
+
+    hours: int = Field(default=0)
+
+    staff_id: int = Field(foreign_key="staff.id")
+    week_id: int = Field(foreign_key="scheduleweek.id")
+
+    week: ScheduleWeek = Relationship(back_populates="staff_weekly_hours_worked")
+    staff: Staff = Relationship(back_populates="weekly_hours_worked")
