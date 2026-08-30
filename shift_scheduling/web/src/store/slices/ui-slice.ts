@@ -1,6 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { Staff } from '@/types'
-import { currentWeekStart, weekEnd } from '@/lib/dates'
+import { currentWeekStart } from '@/lib/dates'
 
 export interface Toast {
   id: string

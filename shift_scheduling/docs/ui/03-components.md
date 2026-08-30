@@ -89,6 +89,17 @@ tokens. Always text — never a bare coloured dot.
 Initials on brand-50, radius-full, 32px (table) / 40px (drawer header). Derived
 from `first_name[0] + last_name[0]`.
 
+### `logo/`
+The ShiftPro mark — a rota tile with one shift assigned. Carries no colour of
+its own; the caller sets it (`text-brand-600` in the sidebar, `text-fg` for
+print). **Sizes:** `16` · `20` · `24` (default) · `32`.
+`16` is a separate optical cut — 3.5 strokes, secondary bars dropped — because
+at that size the 2.5 strokes merge. Decorative (`aria-hidden`): whatever
+contains it supplies the accessible name.
+Outside the app the same drawing lives in `public/`: `logo-mark.svg`,
+`logo-mark-16.svg` (favicon), `logo-mark-mono.svg` (one-colour, for the PDF
+header and print) and `logo.svg` (mark + wordmark lockup).
+
 ### `spinner/`
 Rotating ring, `currentColor`, sizes 16 / 20 / 32. Honours reduced-motion by
 slowing rather than stopping — a frozen spinner reads as a hang.
@@ -188,7 +199,7 @@ shell, which tied every page's internals to a fixed 20×10 grid and broke as soo
 as content didn't fit.
 
 ### `sidebar/`
-Brand wordmark → nav (Schedule, Staff, Departments) → footer.
+Brand mark + wordmark → nav (Schedule, Staff, Departments) → footer.
 Active route: brand-50 fill, brand-700 text, and a 2px brand-600 left bar.
 Nav items are `<NavLink>`s; the whole row is the hit target.
 
@@ -202,3 +213,4 @@ the week picker, Generate/Regenerate and Download PDF.
 
 ---
 *Changelog: 2026-08-21 — initial.*
+*2026-08-29 — added `logo/`; `sidebar/` brand is now mark + wordmark.*

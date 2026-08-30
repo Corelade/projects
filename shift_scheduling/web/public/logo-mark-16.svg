@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="16" height="16" role="img" aria-label="ShiftPro">
+  <rect x="3.5" y="6" width="25" height="23" rx="5" fill="none" stroke="#4f46e5" stroke-width="3.5"/>
+  <path d="M3.5 13.5H28.5" stroke="#4f46e5" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M10.5 3v5M21.5 3v5" stroke="#4f46e5" stroke-width="3.5" stroke-linecap="round"/>
+  <rect x="9" y="18.5" width="14" height="5" rx="2.5" fill="#4f46e5"/>
+</svg>

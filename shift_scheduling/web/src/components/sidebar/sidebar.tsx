@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router'
 import { cn } from '@/lib/cn'
 import Icon, { type IconName } from '@/components/icon/icon'
+import Logo from '@/components/logo/logo'
 
 interface NavItem {
   to: string
@@ -18,7 +19,11 @@ export default function Sidebar() {
   return (
     <aside className="no-print flex w-(--size-sidebar) shrink-0 flex-col border-r border-border bg-surface">
       <div className="flex h-(--size-topbar) shrink-0 items-center px-5">
-        <NavLink to="/schedule" className="focus-ring rounded-sm text-h3 font-semibold text-fg">
+        <NavLink
+          to="/schedule"
+          className="focus-ring flex items-center gap-2.5 rounded-sm text-h3 font-semibold text-fg"
+        >
+          <Logo size={24} className="text-brand-600" />
           ShiftPro
         </NavLink>
       </div>
