@@ -32,7 +32,7 @@ jobs:
 
     defaults:
       run:
-         working-directory: shift_scheduling
+         working-directory: shift_scheduling/backend
 
     steps:
     - uses: actions/checkout@v4
