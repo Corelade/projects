@@ -8,8 +8,8 @@ on:
     paths:
       - 'shift_scheduling/backend/**'
     branches: [ "main" ]
-  # pull_request:
-  #   branches: [ "main" ]
+
+   workflow_dispatch:
 
 permissions:
   contents: read
