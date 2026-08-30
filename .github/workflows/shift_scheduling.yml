@@ -6,7 +6,7 @@ name: Shift Scheduling Application
 on:
   push:
     paths:
-      - 'shift_scheduling/backend'
+      - 'shift_scheduling/backend/**'
     branches: [ "main" ]
   # pull_request:
   #   branches: [ "main" ]
