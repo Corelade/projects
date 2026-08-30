@@ -9,7 +9,7 @@ on:
       - 'shift_scheduling/backend/**'
     branches: [ "main" ]
 
-   workflow_dispatch:
+  workflow_dispatch:
 
 permissions:
   contents: read
