@@ -9,10 +9,6 @@ from sqlalchemy.engine import URL
 load_dotenv()
 import os
 
-db_username = os.getenv("DB_USER")
-db_password = os.getenv("DB_PASSWORD")
-db_name = os.getenv("DB_NAME")
-
 
 # sqlite_file_name = "database.db"
 # sqlite_url = f"sqlite:///{sqlite_file_name}"
@@ -20,11 +16,19 @@ db_name = os.getenv("DB_NAME")
 # connect_args = {"check_same_thread": False}
 # engine = create_engine(url=sqlite_url, connect_args=connect_args)
 
+
+db_username = os.getenv("DB_USER")
+db_password = os.getenv("DB_PASSWORD")
+db_name = os.getenv("DB_NAME")
+db_host = os.getenv("DB_HOST")
+
+
 DB_URL = URL.create(
     drivername="mysql+pymysql",
     username=db_username,
     password=db_password,
-    host="localhost",
+    # host="localhost",
+    host=db_host,
     database=db_name,
 )
 
