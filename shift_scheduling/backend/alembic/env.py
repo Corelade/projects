@@ -4,6 +4,7 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from sqlmodel import SQLModel
 from models import *
+from sqlalchemy.engine import URL
 
 from alembic import context
 from dotenv import load_dotenv
@@ -14,12 +15,27 @@ import os
 db_username = os.getenv("DB_USER")
 db_password = os.getenv("DB_PASSWORD")
 db_name = os.getenv("DB_NAME")
+db_host = os.getenv("DB_HOST")
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-DB_URL = f"mysql+pymysql://{db_username}:{db_password}@localhost/{db_name}"
-config.set_main_option("sqlalchemy.url", str(DB_URL))
+# DB_URL = f"mysql+pymysql://{db_username}:{db_password}@localhost/{db_name}"
+
+DB_URL = URL.create(
+    drivername="mysql+pymysql",
+    username=db_username,
+    password=db_password,
+    host=db_host,
+    database=db_name,
+)
+
+print("ALEMBIC DB HOST:", db_host)
+print("ALEMBIC DB URL:", DB_URL.render_as_string(hide_password=True))
+# config.set_main_option("sqlalchemy.url", str(DB_URL))
+config.set_main_option(
+    "sqlalchemy.url", DB_URL.render_as_string(hide_password=False).replace("%", "%%")
+)
 # print('----------')
 # print(config.get_main_option("sqlalchemy.url"))
 
@@ -81,9 +97,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()
