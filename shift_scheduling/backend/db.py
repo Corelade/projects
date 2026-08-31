@@ -12,6 +12,7 @@ import os
 db_username = os.getenv("DB_USER")
 db_password = os.getenv("DB_PASSWORD")
 db_name = os.getenv("DB_NAME")
+db_host = os.getenv("DB_HOST")
 
 
 # sqlite_file_name = "database.db"
@@ -24,7 +25,7 @@ DB_URL = URL.create(
     drivername="mysql+pymysql",
     username=db_username,
     password=db_password,
-    host="localhost",
+    host=db_host,
     database=db_name,
 )
 
