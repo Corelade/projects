@@ -5,15 +5,22 @@
 [build.environment]
   NODE_VERSION = "22"
 
-# SPA fallback so client-side routes such as /admin resolve.
-[[redirects]]
-  from = "/shiftpro/assets/*"
-  to = "/assets/:splat"
-  status = 200
+# The build emits into dist/shiftpro, so everything under /shiftpro/ is a real
+# file. Netlify serves an existing file in preference to a 200 rewrite, which
+# leaves the fallback below to catch only client-side routes.
 
+# The app lives under /shiftpro/; nothing is published at the bare root.
+# `force` so a stale dist/index.html from an older local build can't shadow this.
+[[redirects]]
+  from = "/"
+  to = "/shiftpro/"
+  status = 302
+  force = true
+
+# SPA fallback so client-side routes such as /shiftpro/staff/3/edit resolve.
 [[redirects]]
   from = "/shiftpro/*"
-  to = "/index.html"
+  to = "/shiftpro/index.html"
   status = 200
 
 [[headers]]
@@ -26,6 +33,6 @@
 
 # Vite emits content-hashed filenames, so these are safe to cache forever.
 [[headers]]
-  for = "/assets/*"
+  for = "/shiftpro/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
