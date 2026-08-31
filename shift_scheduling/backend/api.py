@@ -15,6 +15,7 @@ from utils import *
 from structures import *
 from app import to_normal_dict
 import logging, json, datetime
+import os
 
 # logging.basicConfig(level=logging.INFO)
 # logger = logging.getLogger(__name__)
@@ -34,7 +35,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-origins = ["http://localhost:5173"]
+origins = [
+    "http://localhost:5173",
+    os.getenv("FRONTEND_URL")
+]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
