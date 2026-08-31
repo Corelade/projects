@@ -27,3 +27,4 @@ dist-ssr
 # alembic.ini
 decorators.py
 backend/schedule.py
+web/src/mocks
