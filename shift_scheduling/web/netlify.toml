@@ -7,11 +7,6 @@
 
 # SPA fallback so client-side routes such as /admin resolve.
 [[redirects]]
-  from = "/shiftpro"
-  to = "/shiftpro/"
-  status = 301
-
-[[redirects]]
   from = "/shiftpro/assets/*"
   to = "/assets/:splat"
   status = 200
