@@ -1,21 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" role="img" aria-label="ShiftPro">
-  <!--
-    The 16px optical cut of the mark: heavier strokes than logo-mark.svg and the
-    two secondary bars dropped, because at tab-strip size they merge.
-    brand-600 on light tab strips, brand-500 on dark ones.
-  -->
-  <style>
-    .mark { stroke: #4f46e5; fill: none; stroke-width: 3.5; stroke-linecap: round; }
-    .bar  { fill: #4f46e5; }
-    @media (prefers-color-scheme: dark) {
-      .mark { stroke: #6366f1; }
-      .bar  { fill: #6366f1; }
-    }
-  </style>
-  <g class="mark">
-    <rect x="3.5" y="6" width="25" height="23" rx="5"/>
-    <path d="M3.5 13.5H28.5"/>
-    <path d="M10.5 3v5M21.5 3v5"/>
-  </g>
-  <rect class="bar" x="9" y="18.5" width="14" height="5" rx="2.5"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6098ff"/>
+      <stop offset="1" stop-color="#3b7af8"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#070019"/>
+  <rect x="4" y="4" width="56" height="56" rx="11" fill="url(#g)"/>
+  <text x="32" y="42" font-family="Inter, Helvetica, Arial, sans-serif" font-size="26"
+        font-weight="700" fill="#fff" text-anchor="middle" letter-spacing="1">DA</text>
 </svg>
