@@ -16,6 +16,12 @@
  */
 
 export const ENDPOINTS = {
+  // Placeholders — no auth routes exist on the backend yet. Rename these to
+  // whatever you build; nothing outside this file needs to change.
+  auth: {
+    signIn: '/auth/login',
+    signUp: '/auth/signup',
+  },
   staff: {
     list: '/list_staff',
     create: '/create-staff',
