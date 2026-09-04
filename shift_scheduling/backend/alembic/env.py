@@ -39,8 +39,8 @@ DB_URL = URL.create(
     database=db_name,
 )
 
-print("ALEMBIC DB HOST:", db_host)
-print("ALEMBIC DB URL:", DB_URL.render_as_string(hide_password=True))
+# print("ALEMBIC DB HOST:", db_host)
+# print("ALEMBIC DB URL:", DB_URL.render_as_string(hide_password=True))
 # config.set_main_option("sqlalchemy.url", str(DB_URL))
 config.set_main_option(
     "sqlalchemy.url", DB_URL.render_as_string(hide_password=False).replace("%", "%%")
