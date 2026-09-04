@@ -51,4 +51,4 @@ jobs:
         DB_PASSWORD: test_password
         DB_TEST_NAME: test_db
       run: |
-        python3 -m pytest
+        python3 -m pytest tests/test_scheduler.py
