@@ -37,9 +37,9 @@ export default function SignInPage() {
     if (!valid) return
 
     try {
-      const { token, user } = await signIn(valid).unwrap()
-      // RedirectIfSignedIn takes it from here, honouring ?from=.
-      dispatch(signedIn({ token, user, expiresAt: null }))
+      // Already carries expiresAt, read out of the JWT by the endpoint's
+      // transformResponse. RedirectIfSignedIn takes it from here, honouring ?from=.
+      dispatch(signedIn(await signIn(valid).unwrap()))
     } catch (err) {
       // A rejected sign-in is a form error, not a field one — the server won't
       // say which half was wrong, and neither should this screen.

@@ -24,7 +24,7 @@ export const ENDPOINTS = {
   },
   staff: {
     list: '/list_staff',
-    create: '/create-staff',
+    create: '/create_staff',
     update: (id: number) => `/staff/${id}`,
     remove: (id: number) => `/staff/${id}`,
   },

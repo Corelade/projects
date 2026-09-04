@@ -12,10 +12,19 @@ from dotenv import load_dotenv
 load_dotenv()
 import os
 
-db_username = os.getenv("DB_USER")
-db_password = os.getenv("DB_PASSWORD")
-db_name = os.getenv("DB_NAME")
-db_host = os.getenv("DB_HOST")
+environment = os.getenv("ENVIRONMENT")
+
+if environment == 'local':
+    db_username = os.getenv("DB_USER")
+    db_password = os.getenv("DB_PASSWORD")
+    db_name = os.getenv("DB_NAME")
+    db_host = os.getenv("DB_HOST")
+else:
+    db_username = os.getenv("DB_PROD_USER")
+    db_password = os.getenv("DB_PROD_PASSWORD")
+    db_name = os.getenv("DB_PROD_NAME")
+    db_host = os.getenv("DB_PROD_HOST")
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

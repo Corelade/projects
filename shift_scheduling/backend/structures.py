@@ -11,6 +11,11 @@ DAY = Literal[
 ]
 
 
+class ExclusionType(str, Enum):
+    shift = "shift"
+    day = "day"
+
+
 class StaffCreateRequest(BaseModel):
     first_name: str
     last_name: str
@@ -52,12 +57,29 @@ class DepartmentCreateRequest(BaseModel):
     max_staff: int = 1
     # include: bool = True
 
+    @model_validator(mode="after")
+    def validate_staff_range(self):
+        if self.min_staff > self.max_staff:
+            raise ValueError("min_staff cannot be greater than max_staff")
 
-# class DepartmentUpdateRequest(BaseModel):
-#     id: int
-#     name: str | None = None
-#     min_staff: int | None = None
-#     max_staff: int | None = None
+        return self
+
+
+class DepartmentUpdateRequest(BaseModel):
+    name: str | None = None
+    min_staff: int | None = Field(default=None, ge=1)
+    max_staff: int | None = Field(default=None, ge=1)
+
+    @model_validator(mode="after")
+    def validate_staff_range(self):
+        if (
+            self.min_staff is not None
+            and self.max_staff is not None
+            and self.min_staff > self.max_staff
+        ):
+            raise ValueError("min_staff cannot be greater than max_staff")
+
+        return self
 
 
 class DepartmentResponse(BaseModel):

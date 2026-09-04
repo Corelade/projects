@@ -7,6 +7,7 @@ import {
 } from '@reduxjs/toolkit/query/react'
 
 import { handleMock, type MockKey } from '@/mocks'
+import { signedOut } from '../slices/auth-slice'
 
 const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true'
 
@@ -18,6 +19,23 @@ export interface ApiExtraOptions {
 const realBaseQuery = fetchBaseQuery({
   baseUrl: import.meta.env.VITE_API_BASE_URL,
   headers: { 'Content-Type': 'application/json' },
+
+  /**
+   * The backend guards routes with `Depends(get_current_user)`, so every request
+   * past sign-in needs the token. Only set it when a session exists — /auth/login
+   * and /auth/signup must go out bare, and `Bearer undefined` is worse than no
+   * header at all.
+   *
+   * getState() is typed inline rather than as RootState on purpose: store/index.ts
+   * imports baseApi, so importing RootState back into this file is a cycle.
+   */
+  prepareHeaders: (headers, { getState }) => {
+    const { session } = (
+      getState() as { auth: { session: { token: string } | null } }
+    ).auth
+    if (session) headers.set('Authorization', `Bearer ${session.token}`)
+    return headers
+  },
 })
 
 /**
@@ -39,7 +57,11 @@ const baseQuery: BaseQueryFn<
     }
     return { data: result.data }
   }
-  return realBaseQuery(args, api, extraOptions)
+  const result = await realBaseQuery(args, api, extraOptions)
+  if (result.error?.status === 401){
+    api.dispatch(signedOut())
+  }
+  return result
 }
 
 export const baseApi = createApi({
@@ -66,7 +88,7 @@ export function errorMessage(error: unknown, fallback = 'Something went wrong.')
   }
   if (e.status === 'FETCH_ERROR') {
     console.log(e)
-    return "Couldn't reach the server. Is the backend running?"
+    return "Try again later"
   }
   return fallback
 }

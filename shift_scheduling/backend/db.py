@@ -9,11 +9,18 @@ from sqlalchemy.engine import URL
 load_dotenv()
 import os
 
-db_username = os.getenv("DB_USER")
-db_password = os.getenv("DB_PASSWORD")
-db_name = os.getenv("DB_NAME")
-db_host = os.getenv("DB_HOST")
+environment = os.getenv("ENVIRONMENT")
 
+if environment == 'local':
+    db_username = os.getenv("DB_USER")
+    db_password = os.getenv("DB_PASSWORD")
+    db_name = os.getenv("DB_NAME")
+    db_host = os.getenv("DB_HOST")
+else:
+    db_username = os.getenv("DB_PROD_USER")
+    db_password = os.getenv("DB_PROD_PASSWORD")
+    db_name = os.getenv("DB_PROD_NAME")
+    db_host = os.getenv("DB_PROD_HOST")
 
 # sqlite_file_name = "database.db"
 # sqlite_url = f"sqlite:///{sqlite_file_name}"

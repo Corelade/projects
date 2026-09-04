@@ -1,14 +1,14 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 
 import Button from '@/components/button/button'
 import ErrorPanel from '@/components/error-panel/error-panel'
 import Field from '@/components/field/field'
 import Input from '@/components/input/input'
-import { useAppDispatch } from '@/store'
+// import { useAppDispatch } from '@/store'
 import { errorMessage } from '@/store/api/base-api'
 import { useSignUpMutation } from '@/store/api/auth-api'
-import { signedIn } from '@/store/slices/auth-slice'
+// import { signedIn } from '@/store/slices/auth-slice'
 import AuthLayout from './auth-layout'
 import { useAuthForm } from './use-auth-form'
 import {
@@ -26,9 +26,10 @@ const VALIDATORS = {
 }
 
 export default function SignUpPage() {
-  const dispatch = useAppDispatch()
+  // const dispatch = useAppDispatch()
   const [signUp, { isLoading }] = useSignUpMutation()
   const [formError, setFormError] = useState<string | null>(null)
+  const navigate = useNavigate();
 
   const { values, errors, setValue, blur, validateAll, setFieldError } =
     useAuthForm({ username: '', password: '', confirm: '' }, VALIDATORS)
@@ -40,13 +41,16 @@ export default function SignUpPage() {
     const valid = validateAll()
     if (!valid) return
 
+
     try {
-      const { token, user } = await signUp({
+      // const { success, message } = await signUp({
+      await signUp({
         username: valid.username.trim(),
         password: valid.password,
       }).unwrap()
       // RedirectIfSignedIn takes it from here.
-      dispatch(signedIn({ token, user, expiresAt: null }))
+      // dispatch(signedIn({ token, user, expiresAt: null }))
+      navigate('/auth/login')
     } catch (err) {
       const message = errorMessage(err, "Couldn't create your account.")
       // A taken username is a fact about one field, so it belongs on that field.

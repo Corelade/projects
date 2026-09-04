@@ -6,6 +6,14 @@ import json
 from itertools import zip_longest
 from typing import Literal, TypedDict
 
+
+class ScheduleError(Exception):
+    def __init__(self, message, status_code=400) -> None:
+        self.message = message
+        self.status_code = status_code
+        super().__init__(message)
+
+
 shift_time = ["morning", "afternoon", "evening"]
 DAY_OF_WEEK = [
     "monday",
@@ -246,15 +254,13 @@ def get_other_staff(
 
 
 def get_assignment_staff(assignment: AssignmentStruct, unique=True):
-    assigned_staff = (
-        [
-            stf
-            for day, val in assignment.items()
-            for department in val.values()
-            for staff_list in department.values()
-            for stf in staff_list
-        ]
-    )
+    assigned_staff = [
+        stf
+        for day, val in assignment.items()
+        for department in val.values()
+        for staff_list in department.values()
+        for stf in staff_list
+    ]
     if unique:
         return set(assigned_staff)
     return assigned_staff
@@ -779,10 +785,7 @@ def update_schedule(
     #     ),
     # )
     ans = backtrack(new_assignment, departments, staff, domains, print_domain=True)
-    return {
-        "regenerated": ans != assignment,
-        "result": ans
-    }
+    return {"regenerated": ans != assignment, "result": ans}
 
 
 # if __name__ == "__main__":
