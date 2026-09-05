@@ -173,7 +173,10 @@ recur:
 --size-control-sm:    2rem;    /* 32px small button   */
 --size-topbar:        4rem;    /* 64px                */
 --size-sidebar:      16.25rem; /* 260px               */
+--size-sidebar-rail:  4.5rem;  /* 72px icon-only rail */
 --size-rota-cell-min: 3.5rem;  /* 56px                */
+--size-rota-label:   12rem;    /* 192px frozen column */
+--size-rota-label-sm: 8.5rem;  /* 136px, below `sm`   */
 --size-drawer:       30rem;    /* 480px drawer width  */
 
 --radius-sm: 0.25rem;   /* 4px  */
@@ -188,6 +191,25 @@ recur:
 --ring-focus-width:  2px;
 --ring-focus-offset: 2px;
 ```
+
+---
+
+## Breakpoints
+
+Tailwind's defaults, restated in `@theme` so the responsive rules in
+`05-screens.md` have a named home rather than four magic numbers:
+
+```css
+--breakpoint-sm: 40rem;  /*  640px — phone / large phone   */
+--breakpoint-md: 48rem;  /*  768px — table column dropping */
+--breakpoint-lg: 64rem;  /* 1024px — sidebar leaves the page */
+--breakpoint-xl: 80rem;  /* 1280px — sidebar regains labels  */
+```
+
+Prefer the `sm:` / `md:` / `lg:` / `xl:` variants in components. A `.css` file
+that needs one has to write the `rem` literal — `var()` is not allowed in a
+media query — and every such rule is in `staff.css`, `departments.css` and
+`schedule.css`.
 
 ---
 
@@ -217,6 +239,11 @@ assumption that would block that, e.g. `text-slate-900` where `text-fg` would do
 ---
 *Changelog:*
 *2026-08-21 — initial.*
+*2026-09-05 — added `--breakpoint-*`, `--size-sidebar-rail` and the two
+`--size-rota-label` tokens when the responsive rules in `05-screens.md` were
+actually built. The rota label width had been a bare `12rem` literal in
+`schedule.css` since the start; it needed a token the moment a second value
+existed.*
 *2026-08-21 — added overlay, print-ink and `--size-drawer` tokens; split
 `--ring-focus` into `-color` / `-width` / `-offset` so the `@utility focus-ring`
 rule can consume them individually. Found by the Phase 9 token-parity audit.*

@@ -69,10 +69,14 @@ what makes the anti-drift audit possible.
 ## Non-goals
 
 - Real-time collaboration or multi-user presence.
-- Mobile-first. Desktop-first; it should degrade to tablet without breaking, but
-  the rota grid assumes a wide viewport.
+- Mobile-first. Still desktop-first — the layouts are designed at full width and
+  adapted downwards, and the rota grid assumes a wide viewport and scrolls
+  rather than reflowing. It does now work on a phone; see `05-screens.md`.
 - Theming beyond the single light palette. Dark mode is enabled by the token
   structure but not built.
 
 ---
-*Changelog: 2026-08-21 — initial.*
+*Changelog:*
+*2026-08-21 — initial.*
+*2026-09-05 — the mobile non-goal was narrowed: phone layouts are built, but
+the design is still authored desktop-first.*

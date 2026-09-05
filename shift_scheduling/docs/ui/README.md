@@ -53,4 +53,5 @@ See `08-drift-checklist.md` for the full audit.
 Covered: schedule (view, update, print), staff CRUD, departments CRUD.
 
 Not covered in this pass: authentication, dark mode (tokens are structured to
-allow it later), mobile-first layouts, dashboard, settings.
+allow it later), dashboard, settings. Responsive layouts down to phone width are
+covered — see the Responsive section of `05-screens.md`.

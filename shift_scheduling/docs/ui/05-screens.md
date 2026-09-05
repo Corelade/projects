@@ -182,9 +182,38 @@ existing rotas.
 
 ## Responsive
 
-Desktop-first. Below 1280px the sidebar collapses to icons; below 1024px it
-becomes a slide-over. The rota grid never reflows — it scrolls horizontally with
-its sticky first column, because a week is a week.
+Desktop-first, but it goes all the way down to a phone.
+
+**The shell.** Below `xl` (1280px) the sidebar collapses to a 72px icon rail —
+labels are dropped, not truncated, and each link carries its label as
+`aria-label` + `title` so the accessible name survives. Below `lg` (1024px) the
+sidebar leaves the page entirely and becomes a slide-over: a hamburger in the
+topbar opens it, a backdrop, `Esc` and any link close it, and while closed it is
+`invisible`, which is what keeps its links out of the tab order. The topbar's
+actions wrap onto their own line rather than squeezing the title.
+
+**The rota grid never reflows** — it scrolls horizontally inside its own
+container, with its sticky header row and frozen first column, because a week is
+a week. Below `sm` the frozen column narrows to `--size-rota-label-sm`, which is
+the only concession: at 12rem it would eat a third of a phone before a single
+day was visible.
+
+**Data tables** scroll horizontally too, but shed what a phone can't use.
+Below `md` the roster drops *Minimum* and *Unavailable* — detail the row's own
+drawer shows in full — and keeps name, position, contract and the row actions.
+Departments keeps all four columns and just narrows them.
+
+**Row actions** reveal on `:hover` on a pointer device and are always visible
+under `@media (hover: none)`. A touch screen has no hover, and Delete has no
+other way in.
+
+**Paired form fields** (first/last name, contract/minimum hours) stack below
+`sm`. Modals cap at the viewport height and scroll their body, so the footer
+buttons are always reachable on a short screen.
 
 ---
-*Changelog: 2026-08-21 — initial.*
+*Changelog:*
+*2026-08-21 — initial.*
+*2026-09-05 — the responsive rules above were specified but never built; built
+them, and extended the spec past tablet to phones (slide-over sidebar, wrapping
+topbar, column shedding, touch-visible row actions, height-capped modals).*
