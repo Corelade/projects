@@ -93,16 +93,16 @@ def signup(data: Credentials, db: SessionDep):
 
 
 @app.post("/auth/login", response_model=AuthResponse)
-def login(data: Credentials, db: SessionDep) -> AuthResponse:
+def login(data: Credentials, db: SessionDep):
     "This is to return a token user will use in subsequent requests"
     user = get_user(data.username, db)
     if not user:
-        return HTTPException(
+        raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Invalid credentials"
         )
 
     if not verify_password(data.password, user.password):
-        return HTTPException(
+        raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
         )
 
