@@ -156,7 +156,7 @@ def initialize(db, current_week, user: User):
     staff_list = StaffData.list_staff_members()
 
     department_statement = db.exec(
-        select(Department).filter(Department.deleted == False)
+        select(Department).filter(Department.deleted == False, Department.creator == user)
     ).all()
     for department in department_statement:
         _ = DepartmentData(
