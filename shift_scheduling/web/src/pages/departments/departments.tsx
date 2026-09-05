@@ -192,10 +192,16 @@ export default function DepartmentsPage() {
                         zebra={i % 2 === 1}
                         onClick={() => navigate(`/departments/${d.id}/edit`)}
                       >
-                        <TD className="font-medium">{capitalize(d.name)}</TD>
-                        <TD align="right">{d.min_staff}</TD>
-                        <TD align="right">{d.max_staff}</TD>
-                        <TD>
+                        <TD className="col-name font-medium">
+                          {capitalize(d.name)}
+                        </TD>
+                        <TD className="col-min" align="right">
+                          {d.min_staff}
+                        </TD>
+                        <TD className="col-max" align="right">
+                          {d.max_staff}
+                        </TD>
+                        <TD className="col-actions">
                           <RowActions>
                             <Button
                               variant="ghost"

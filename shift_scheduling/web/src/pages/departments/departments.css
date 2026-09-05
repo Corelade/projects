@@ -16,3 +16,22 @@
 .departments-table .col-actions {
   width: 22%;
 }
+
+/* Only four columns to begin with — a phone just needs them narrower, not
+   fewer. */
+@media (width < 48rem) {
+  .departments-table {
+    min-width: 30rem;
+  }
+
+  .departments-table .col-name {
+    width: 40%;
+  }
+  .departments-table .col-min,
+  .departments-table .col-max {
+    width: 15%;
+  }
+  .departments-table .col-actions {
+    width: 30%;
+  }
+}

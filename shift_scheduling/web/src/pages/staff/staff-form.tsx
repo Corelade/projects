@@ -92,7 +92,7 @@ export default function StaffForm({
 
   return (
     <form id={STAFF_FORM_ID} onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field id="first_name" label="First name" required error={errorFor('first_name')}>
           {(p) => (
             <Input
@@ -159,7 +159,7 @@ export default function StaffForm({
         )}
       </Field>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Field
           id="contract_hours"
           label="Contract hours"

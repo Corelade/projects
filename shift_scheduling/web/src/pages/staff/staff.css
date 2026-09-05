@@ -29,3 +29,31 @@
 .staff-table .cell-name {
   overflow-wrap: anywhere;
 }
+
+/* On a phone the roster keeps the two things you scan for — who, and what they
+   do — plus the actions. Contract hours stay because they're the number the
+   drawer is usually opened to check; minimum hours and the exclusion summary
+   are detail the row's own drawer already shows in full. */
+@media (width < 48rem) {
+  .staff-table {
+    min-width: 34rem;
+  }
+
+  .staff-table .col-min,
+  .staff-table .col-unavailable {
+    display: none;
+  }
+
+  .staff-table .col-name {
+    width: 42%;
+  }
+  .staff-table .col-position {
+    width: 20%;
+  }
+  .staff-table .col-contract {
+    width: 16%;
+  }
+  .staff-table .col-actions {
+    width: 22%;
+  }
+}

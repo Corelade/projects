@@ -166,7 +166,7 @@ export default function SchedulePage() {
         </>
       }
     >
-      <div className="flex h-full flex-col gap-4 p-6">
+      <div className="flex h-full flex-col gap-4 p-4 sm:p-6">
         {/* Print-only header — the screen already shows this in the topbar. */}
         <div className="print-only">
           <h1 style={{ fontSize: '14pt', fontWeight: 700 }}>

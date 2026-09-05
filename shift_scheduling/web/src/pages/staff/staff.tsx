@@ -232,7 +232,7 @@ export default function StaffPage() {
                         zebra={i % 2 === 1}
                         onClick={() => navigate(`/staff/${s.id}/edit`)}
                       >
-                        <TD className="cell-name">
+                        <TD className="col-name cell-name">
                           <span className="flex items-center gap-2.5">
                             <Avatar initials={initials(s)} />
                             <span className="flex flex-col">
@@ -243,15 +243,19 @@ export default function StaffPage() {
                             </span>
                           </span>
                         </TD>
-                        <TD>
+                        <TD className="col-position">
                           <Badge>{POSITION_LABELS[s.position]}</Badge>
                         </TD>
-                        <TD align="right">{s.contract_hours} h</TD>
-                        <TD align="right">{s.min_hours} h</TD>
-                        <TD className="text-fg-muted">
+                        <TD className="col-contract" align="right">
+                          {s.contract_hours} h
+                        </TD>
+                        <TD className="col-min" align="right">
+                          {s.min_hours} h
+                        </TD>
+                        <TD className="col-unavailable text-fg-muted">
                           {summariseExclusions(s.day_exclusions, s.shift_exclusions)}
                         </TD>
-                        <TD>
+                        <TD className="col-actions">
                           <RowActions>
                             <Button
                               variant="ghost"

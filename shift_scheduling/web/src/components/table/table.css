@@ -22,3 +22,11 @@
 .data-table tbody tr:last-child td {
   border-bottom: 0;
 }
+
+/* Row actions reveal on hover. A touch screen has no hover, so there they stay
+   visible — otherwise Delete would have no way in at all. */
+@media (hover: none) {
+  .row-actions {
+    opacity: 1;
+  }
+}

@@ -79,16 +79,18 @@ export default function Modal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
-        className="relative w-full max-w-120 rounded-lg bg-surface shadow-md"
+        className="relative flex max-h-full w-full max-w-120 flex-col rounded-lg bg-surface shadow-md"
       >
-        <div className="px-5 pb-2 pt-5">
+        <div className="shrink-0 px-5 pb-2 pt-5">
           <h2 id="modal-title" className="text-h3 font-semibold text-fg">
             {title}
           </h2>
         </div>
-        <div className="px-5 pb-5 text-body text-fg-muted">{children}</div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-5 text-body text-fg-muted">
+          {children}
+        </div>
         {footer && (
-          <div className="flex justify-end gap-2 border-t border-border px-5 py-4">
+          <div className="flex shrink-0 justify-end gap-2 border-t border-border px-5 py-4">
             {footer}
           </div>
         )}

@@ -11,6 +11,15 @@
     Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
     Arial, sans-serif;
 
+  /* --- breakpoints ------------------------------------------------------ */
+  /* Same values as Tailwind's defaults, restated so the responsive rules in
+     docs/ui/05-screens.md have a named home: `lg` is where the sidebar stops
+     being part of the page, `xl` is where it regains its labels. */
+  --breakpoint-sm: 40rem;
+  --breakpoint-md: 48rem;
+  --breakpoint-lg: 64rem;
+  --breakpoint-xl: 80rem;
+
   /* --- type scale ------------------------------------------------------- */
   --text-display: 1.875rem;
   --text-display--line-height: 2.25rem;
@@ -119,7 +128,10 @@
   --size-control-sm: 2rem;
   --size-topbar: 4rem;
   --size-sidebar: 16.25rem;
+  --size-sidebar-rail: 4.5rem;
   --size-rota-cell-min: 3.5rem;
+  --size-rota-label: 12rem;
+  --size-rota-label-sm: 8.5rem;
   --size-drawer: 30rem;
 
   /* --- radius ----------------------------------------------------------- */

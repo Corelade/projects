@@ -139,7 +139,7 @@ export function TD({ children, align = 'left', className, colSpan }: TDProps) {
 /** Row-action cell: buttons stay in the DOM and keyboard-reachable always. */
 export function RowActions({ children }: { children: ReactNode }) {
   return (
-    <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity duration-(--duration-fast) group-hover/row:opacity-100 focus-within:opacity-100">
+    <div className="row-actions flex items-center justify-end gap-1 opacity-0 transition-opacity duration-(--duration-fast) group-hover/row:opacity-100 focus-within:opacity-100">
       {children}
     </div>
   )

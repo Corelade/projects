@@ -13,11 +13,27 @@
   border-collapse: separate;
   border-spacing: 0;
   background-color: var(--color-surface);
+
+  /* The label column's width in one place: the day columns are whatever's
+     left over, so the two must never be stated independently. */
+  --rota-label-width: var(--size-rota-label);
+}
+
+/* A week is a week — the grid scrolls sideways rather than reflowing
+   (docs/ui/05-screens.md). On a phone the only concession is the frozen label
+   column, which at 12rem would eat half the screen before a day is visible. */
+@media (width < 40rem) {
+  .rota-table {
+    --rota-label-width: var(--size-rota-label-sm);
+    /* Fewer pixels to pan through; the day columns stay wide enough for a
+       wrapped name pill. */
+    min-width: 56rem;
+  }
 }
 
 .rota-table th:not(.rota-label),
 .rota-table td {
-  width: calc((100% - 12rem) / 7);
+  width: calc((100% - var(--rota-label-width)) / 7);
 }
 
 .rota-table th,
@@ -51,8 +67,8 @@
   position: sticky;
   left: 0;
   z-index: calc(var(--z-sticky) - 1);
-  width: 12rem;
-  min-width: 12rem;
+  width: var(--rota-label-width);
+  min-width: var(--rota-label-width);
   background-color: var(--color-surface);
   padding: 0.5rem 0.75rem;
   text-align: left;

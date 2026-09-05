@@ -29,7 +29,7 @@ function ToastItem({ toast }: { toast: ToastData }) {
   return (
     <div
       className={cn(
-        'pointer-events-auto flex w-90 items-start gap-2.5 rounded-md border p-3 shadow-sm',
+        'pointer-events-auto flex w-full items-start gap-2.5 rounded-md border p-3 shadow-sm sm:w-90',
         STYLES[toast.variant],
       )}
     >
@@ -54,7 +54,7 @@ export default function ToastStack() {
     <div
       role="status"
       aria-live="polite"
-      className="no-print pointer-events-none fixed bottom-6 right-6 flex flex-col gap-2"
+      className="no-print pointer-events-none fixed inset-x-4 bottom-4 flex flex-col gap-2 sm:inset-x-auto sm:bottom-6 sm:right-6"
       style={{ zIndex: 'var(--z-toast)' }}
     >
       {toasts.map((t) => (
