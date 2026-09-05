@@ -107,54 +107,70 @@ class TestCheckFeasibility(BaseClass):
     # @pytest.mark.skip(reason="tried")
     def test_feasibility_is_false(self):
         """All of the checks here should return False"""
-        assert is_feasibile([], []) is False  # if no staff nor dept
+        # if no staff nor dept
+        # assert is_feasibile([], []) is False
+        with pytest.raises(ScheduleError):
+            assert is_feasibile([], [])
         # assert is_feasibile(
         #     [self.shoes], [self.bola, self.core, self.loli, self.riri, self.shem]
         # ) #more available staff than depts required
-        assert (
-            is_feasibile([self.shoes], [self.kolade, self.kunle]) is False
-        )  # Kunle not available tuesday, kolade not available tuesday evening
-        assert (
-            is_feasibile([self.shoes], [self.kunle]) is False
-        )  # Kunle not available tuesday
-        assert (
-            is_feasibile([self.shoes], [self.kolade]) is False
-        )  # kolade not available during evenings which leave empty unfilled space
-        assert (
-            is_feasibile([self.shoes, self.mens], [self.kolade]) is False
-        )  # num of department_staff required is less than staff available
-        assert (
-            is_feasibile([self.shoes], [self.kolade, self.motun]) is False
-        )  # both staff not available evenings and will leave empty space
-        assert (
-            is_feasibile(
-                [self.mens],
-                [self.riri, self.halafia, self.segun, self.daoud],
-                DAY_OF_WEEK=["monday"],
+        with pytest.raises(ScheduleError):
+            assert (
+                is_feasibile([self.shoes], [self.kolade, self.kunle]) is False
+            )  # Kunle not available tuesday, kolade not available tuesday evening
+        with pytest.raises(ScheduleError):
+            assert (
+                is_feasibile([self.shoes], [self.kunle]) is False
+            )  # Kunle not available tuesday
+        with pytest.raises(ScheduleError):
+            assert (
+                is_feasibile([self.shoes], [self.kolade]) is False
+            )  # kolade not available during evenings which leave empty unfilled space
+        with pytest.raises(ScheduleError):
+            assert (
+                is_feasibile([self.shoes, self.mens], [self.kolade]) is False
+            )  # num of department_staff required is less than staff available
+        with pytest.raises(ScheduleError):
+            assert (
+                is_feasibile([self.shoes], [self.kolade, self.motun]) is False
+            )  # both staff not available evenings and will leave empty space
+        with pytest.raises(ScheduleError):
+            assert (
+                is_feasibile(
+                    [self.mens],
+                    [self.riri, self.halafia, self.segun, self.daoud],
+                    DAY_OF_WEEK=["monday"],
+                )
+                is False
+            )  # too many staff available
+        with pytest.raises(ScheduleError):
+            assert (
+                is_feasibile([self.shoes, self.ladies], [self.bola, self.core]) is False
             )
-            is False
-        )  # too many staff available
-        assert is_feasibile([self.shoes, self.ladies], [self.bola, self.core]) is False
         # assertion for controlling max_hours as a staff shouldnt work more than contract hours in a week
-        assert (
-            is_feasibile(
-                [self.mens],
-                [self.bola],
-                DAY_OF_WEEK=[
-                    "monday",
-                    "tuesday",
-                    "wednesday",
-                    "thursday",
-                ],
+        with pytest.raises(ScheduleError):
+            assert (
+                is_feasibile(
+                    [self.mens],
+                    [self.bola],
+                    DAY_OF_WEEK=[
+                        "monday",
+                        "tuesday",
+                        "wednesday",
+                        "thursday",
+                    ],
+                )
+                is False
             )
-            is False
-        )
+
+        # not enough hours
+        with pytest.raises(ScheduleError):
+            assert is_feasibile([self.mens], [self.bola, self.core])
 
     # @pytest.mark.skip(reason="tried")
     def test_feasibility_is_true(self):
         """These checks should return True"""
         assert is_feasibile([self.mens], [self.bola], ["monday", "tuesday"]) is True
-        assert is_feasibile([self.mens], [self.bola, self.core]) is False
         assert is_feasibile([self.mens], [self.bola, self.core, self.kunle]) is True
         assert (
             is_feasibile(
@@ -437,7 +453,9 @@ class TestUpdateSchedule:
         res = scheduler(self.departments, self.staff_members)
         self.core.contract_hours = 20
 
-        updated_res = update_schedule(res, self.departments, self.staff_members)["result"]
+        updated_res = update_schedule(res, self.departments, self.staff_members)[
+            "result"
+        ]
         assigned_staff_occurence = [
             stf
             for day, val in updated_res.items()
@@ -477,7 +495,9 @@ class TestUpdateSchedule:
         self.segun = StaffData("segun", "associate")
         self.halafia = StaffData("halafia", "associate")
 
-        updated_res = update_schedule(res, self.departments, self.staff_members)["result"]
+        updated_res = update_schedule(res, self.departments, self.staff_members)[
+            "result"
+        ]
         assignment_departments = get_assignment_departments(updated_res)
         assignment_staff = get_assignment_staff(updated_res)
 
@@ -497,9 +517,10 @@ class TestUpdateSchedule:
 
         self.shoes.max_staff = 1
 
-        updated_res = update_schedule(res, self.departments, self.staff_members)["result"]
-
-        assert updated_res is None
+        with pytest.raises(ScheduleError):
+            update_schedule(res, self.departments, self.staff_members)[
+                "result"
+            ]
 
     # @pytest.mark.skip
     def test_update_min_staff_increase(self):
@@ -513,7 +534,9 @@ class TestUpdateSchedule:
         self.shoes.min_staff = 2
         self.shoes.max_staff = 2
 
-        updated_res = update_schedule(res, self.departments, self.staff_members)["result"]
+        updated_res = update_schedule(res, self.departments, self.staff_members)[
+            "result"
+        ]
 
         assert updated_res is not None
 
@@ -546,7 +569,7 @@ class TestUpdateSchedule:
         assert self.core not in get_staff_in_day(
             assignment=updated_res, query_day="wednesday"
         )
-        
+
     def test_update_change_staff_shift_availability(self):
         # self.zara = StaffData("zara", "associate")
         self.loli.shift_exclusion_list = ["morning"]
@@ -572,8 +595,8 @@ class TestUpdateSchedule:
 
     def test_update_no_change(self):
         res = scheduler(self.departments, self.staff_members)
-        
+
         updated_res = update_schedule(res, self.departments, self.staff_members)
-        
+
         assert updated_res["result"] == res
         assert updated_res["regenerated"] is False

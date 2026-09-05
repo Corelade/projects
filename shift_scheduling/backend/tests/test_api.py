@@ -437,6 +437,8 @@ class TestGenerateSchedule(BaseTestClass):
         assert resp.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_generate_schedule_fail(self):
+        '1 dept - 1 Staff -> Fail'
+        
         client.post("/create_department", json=self.shoes, headers=self.headers_two)
 
         self.staff_one = {

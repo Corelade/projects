@@ -15,6 +15,10 @@ from sqlalchemy.orm import selectinload, with_loader_criteria
 
 
 # TODO refactor code
+# Make error messages more user friendly
+# create a how to page to explain how it works (include how many hours is one shift)
+
+
 def week_str_to_object(week_start: str):
     week_date_object = datetime.strptime(week_start, "%Y-%m-%d")
     return week_date_object

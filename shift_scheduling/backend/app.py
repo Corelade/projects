@@ -150,12 +150,13 @@ def is_feasibile(
     """
 
     if not depts or not staff_arr:
-        print("No Departments or Staff")
+        # print("No Departments or Staff")
         # return {
         #     'success': False,
         #     'message': message
         # }
-        return False
+        # return False
+        raise ScheduleError("No Departments or Staff")
 
     NUM_SHIFTS = 3
     # this gets the total number of shifts that need filling
@@ -180,13 +181,19 @@ def is_feasibile(
         print(
             f"Required Hours -> '{required_hours}' is more than Available Capacity -> '{available_capacity}'"
         )
-        return False
+        # return False
+        raise ScheduleError(
+            f"Required Hours -> '{required_hours}' is more than Available Capacity -> '{available_capacity}'"
+        )
 
     if required_hours < min_required_hours:
         print(
             f"Required Hours -> '{required_hours}' is greater than number of min_available hours '{min_required_hours}'"
         )
-        return False
+        # return False
+        raise ScheduleError(
+            f"Required Hours -> '{required_hours}' is greater than number of min_available hours '{min_required_hours}'"
+        )
 
     for day in DAY_OF_WEEK:
         unfilled = defaultdict(int)
@@ -207,7 +214,8 @@ def is_feasibile(
         if max(unfilled.values()) > 0:
             # print("Unfilled present", unfilled)
             print("Not enough staff for", day)
-            return False
+            # return False
+            raise ScheduleError(f"Not enough staff for {day}")
 
     total_min_staff = sum(department.min_staff for department in depts)
 
@@ -215,7 +223,10 @@ def is_feasibile(
         print(
             "Total number of required staff is greater than total number of available staff"
         )
-        return False
+        # return False
+        raise ScheduleError(
+            "Total number of required staff is greater than total number of available staff"
+        )
 
     return True
 
@@ -584,7 +595,8 @@ def backtrack(
         #     break
         # print("\n")
     # print("Can not find suitable appointment")
-    return None
+    # return None
+    raise ScheduleError("Can not find suitable appointment")
 
 
 def update_schedule(
@@ -626,7 +638,7 @@ def update_schedule(
     # )
 
     if not is_feasibile(departments, staff):
-        return None
+        return
 
     domains = {
         day: {
@@ -784,7 +796,8 @@ def update_schedule(
     #         ]
     #     ),
     # )
-    ans = backtrack(new_assignment, departments, staff, domains, print_domain=True)
+    
+    ans = backtrack(new_assignment, departments, staff, domains, print_domain=False)
     return {"regenerated": ans != assignment, "result": ans}
 
 
@@ -804,7 +817,7 @@ def scheduler(departments: list[DepartmentData], staff: list[StaffData]):
 
     if not is_feasibile(departments, staff):
         # print("Not Feasible")
-        return None
+        return
     else:
         assignment: AssignmentStruct = {
             day: {
