@@ -3,6 +3,8 @@ import { NavLink } from 'react-router'
 import { cn } from '@/lib/cn'
 import Icon, { type IconName } from '@/components/icon/icon'
 import Logo from '@/components/logo/logo'
+import { useAppDispatch } from '@/store'
+import { signedOut } from '@/store/slices/auth-slice'
 
 interface NavItem {
   to: string
@@ -15,6 +17,11 @@ const NAV: NavItem[] = [
   { to: '/staff', label: 'Staff', icon: 'users' },
   { to: '/departments', label: 'Departments', icon: 'building' },
 ]
+
+/** Shared by the two footer items, so they stay identical across all three
+    sidebar shapes — full, icon rail, slide-over. */
+const FOOTER_ITEM =
+  'focus-ring flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-body text-fg-muted hover:bg-surface-subtle hover:text-fg lg:justify-center lg:px-0 xl:justify-start xl:px-3'
 
 export interface SidebarProps {
   /** Only meaningful below `lg`, where the sidebar is a slide-over. */
@@ -34,6 +41,29 @@ export interface SidebarProps {
  * watching the route for a change would miss.
  */
 export default function Sidebar({ open, onClose }: SidebarProps) {
+  const dispatch = useAppDispatch()
+
+  /**
+   * Sign-out is client-only — there's no /auth/logout endpoint — and it leaves
+   * via a full document load rather than a router navigation.
+   *
+   * An in-app navigate loses a race it cannot win: a redux dispatch re-renders
+   * its subscribers synchronously, while react-router defers navigations in a
+   * transition. Whichever order you write them in, RequireAuth re-renders on
+   * the route being left, sees a null session, and fires its own <Navigate> to
+   * `/sign-in?from=/staff` — which lands the user right back where they signed
+   * out from on their next sign-in. flushSync doesn't help; the transition is
+   * still deferred.
+   *
+   * Reloading sidesteps it entirely and is the honest thing to do here anyway:
+   * it drops every cached query along with the session, so the next person to
+   * sign in on this browser cannot see the previous one's roster or rota.
+   */
+  function signOut() {
+    dispatch(signedOut())
+    window.location.assign(import.meta.env.BASE_URL)
+  }
+
   // Esc closes the slide-over. Harmless above `lg`, where `open` stays false.
   useEffect(() => {
     if (!open) return
@@ -124,17 +154,28 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
           </ul>
         </nav>
 
-        <div className="shrink-0 border-t border-border px-3 py-3 lg:px-2 xl:px-3">
+        <div className="flex shrink-0 flex-col gap-0.5 border-t border-border px-3 py-3 lg:px-2 xl:px-3">
           <a
             href="mailto:support@shiftpro.test"
             onClick={onClose}
             aria-label="Support"
             title="Support"
-            className="focus-ring flex items-center gap-2.5 rounded-md px-3 py-2 text-body text-fg-muted hover:bg-surface-subtle hover:text-fg lg:justify-center lg:px-0 xl:justify-start xl:px-3"
+            className={FOOTER_ITEM}
           >
             <Icon name="question" size={20} className="shrink-0" />
             <span className="lg:hidden xl:inline">Support</span>
           </a>
+
+          <button
+            type="button"
+            onClick={signOut}
+            aria-label="Sign out"
+            title="Sign out"
+            className={FOOTER_ITEM}
+          >
+            <Icon name="logout" size={20} className="shrink-0" />
+            <span className="lg:hidden xl:inline">Sign out</span>
+          </button>
         </div>
       </aside>
     </>

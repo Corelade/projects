@@ -4,11 +4,15 @@ import ToastStack from '@/components/toast/toast'
 import SignInPage from '@/pages/auth/sign-in'
 import SignUpPage from '@/pages/auth/sign-up'
 import DepartmentsPage from '@/pages/departments/departments'
+import HomePage from '@/pages/home/home'
 import SchedulePage from '@/pages/schedule/schedule'
 import StaffPage from '@/pages/staff/staff'
 import RequireAuth, { RedirectIfSignedIn } from '@/routes/require-auth'
 
 /**
+ * `/` is public and unguarded — it's the marketing page, and it renders for
+ * signed-in visitors too, with its calls to action pointing at the rota.
+ *
  * Drawer routes are nested children of their list route, so the list stays
  * mounted behind the drawer and Back closes it.
  *
@@ -20,7 +24,7 @@ export default function App() {
   return (
     <>
       <Routes>
-        <Route path="/" element={<Navigate to="/schedule" replace />} />
+        <Route path="/" element={<HomePage />} />
 
         <Route
           path="/sign-in"
@@ -72,7 +76,7 @@ export default function App() {
           <Route path=":id/edit" element={null} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/schedule" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <ToastStack />
     </>

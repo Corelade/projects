@@ -21,6 +21,10 @@
   --breakpoint-xl: 80rem;
 
   /* --- type scale ------------------------------------------------------- */
+  /* `hero` exists only for the marketing page at `/`. Inside the app `display`
+     is still the ceiling — a 44px heading has no place above a rota. */
+  --text-hero: 2.75rem;
+  --text-hero--line-height: 3.25rem;
   --text-display: 1.875rem;
   --text-display--line-height: 2.25rem;
   --text-h1: 1.5rem;

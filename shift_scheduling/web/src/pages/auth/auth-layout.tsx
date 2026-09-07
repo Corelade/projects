@@ -25,7 +25,7 @@ export default function AuthLayout({
     <main className="flex min-h-dvh flex-col items-center justify-center bg-surface-subtle px-4 py-10">
       <div className="flex w-full max-w-sm flex-col gap-6">
         <Link
-          to="/sign-in"
+          to="/"
           className="focus-ring mx-auto flex items-center gap-2.5 rounded-sm text-h2 font-semibold text-fg"
         >
           <Logo size={32} className="text-brand-600" />

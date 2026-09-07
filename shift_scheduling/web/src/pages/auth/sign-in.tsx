@@ -5,6 +5,7 @@ import Button from '@/components/button/button'
 import ErrorPanel from '@/components/error-panel/error-panel'
 import Field from '@/components/field/field'
 import Input from '@/components/input/input'
+import PasswordInput from '@/components/password-input/password-input'
 import { useAppDispatch } from '@/store'
 import { errorMessage } from '@/store/api/base-api'
 import { useSignInMutation } from '@/store/api/auth-api'
@@ -82,9 +83,8 @@ export default function SignInPage() {
 
         <Field id="password" label="Password" error={errors.password} required>
           {(props) => (
-            <Input
+            <PasswordInput
               {...props}
-              type="password"
               autoComplete="current-password"
               value={values.password}
               invalid={Boolean(errors.password)}
