@@ -1,5 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { AuthUser } from '@/store/api/auth-api'
+import { clearStoredChat } from '@/components/ask-ai/chat-storage'
 
 export interface Session {
   token: string
@@ -99,6 +100,7 @@ const authSlice = createSlice({
       state.session = null
       state.hydrated = true
       clearStoredSession()
+      clearStoredChat()
     },
   },
 })

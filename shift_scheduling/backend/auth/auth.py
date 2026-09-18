@@ -46,23 +46,27 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 
-def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: SessionDep):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+def user_from_token(token: str, db) -> User | None:
+    "The user a JWT belongs to, or None if the token is invalid, expired or unknown"
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username = payload.get("user")
-        if username is None:
-            raise credentials_exception
-        token_data = TokenData(username=username)
     except InvalidTokenError:
-        raise credentials_exception
-    user = get_user(username=token_data.username, db=db)
+        return None
+    username = payload.get("user")
+    if username is None:
+        return None
+    token_data = TokenData(username=username)
+    return get_user(username=token_data.username, db=db)
+
+
+def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: SessionDep):
+    user = user_from_token(token, db)
     if user is None:
-        raise credentials_exception
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     return user
 
 UserQuery = Annotated[User, Depends(get_current_user)]

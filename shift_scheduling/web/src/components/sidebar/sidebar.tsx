@@ -3,8 +3,9 @@ import { NavLink } from 'react-router'
 import { cn } from '@/lib/cn'
 import Icon, { type IconName } from '@/components/icon/icon'
 import Logo from '@/components/logo/logo'
-import { useAppDispatch } from '@/store'
+import { useAppDispatch, useAppSelector } from '@/store'
 import { signedOut } from '@/store/slices/auth-slice'
+import { toggleAskAi } from '@/store/slices/ui-slice'
 
 interface NavItem {
   to: string
@@ -42,6 +43,7 @@ export interface SidebarProps {
  */
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const dispatch = useAppDispatch()
+  const askAiOpen = useAppSelector((s) => s.ui.askAiOpen)
 
   /**
    * Sign-out is client-only — there's no /auth/logout endpoint — and it leaves
@@ -151,6 +153,29 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                 </NavLink>
               </li>
             ))}
+            <li>
+              {/* Not a route: AskAI is a panel over the current page. */}
+              <button
+                type="button"
+                onClick={() => {
+                  dispatch(toggleAskAi())
+                  onClose()
+                }}
+                aria-label="AskAI"
+                aria-expanded={askAiOpen}
+                title="AskAI"
+                className={cn(
+                  'focus-ring relative flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-body transition-colors duration-(--duration-fast)',
+                  'lg:justify-center lg:px-0 xl:justify-start xl:px-3',
+                  askAiOpen
+                    ? 'bg-brand-50 font-medium text-brand-700'
+                    : 'text-fg-muted hover:bg-surface-subtle hover:text-fg',
+                )}
+              >
+                <Icon name="sparkles" size={20} className="shrink-0" />
+                <span className="lg:hidden xl:inline">AskAI</span>
+              </button>
+            </li>
           </ul>
         </nav>
 

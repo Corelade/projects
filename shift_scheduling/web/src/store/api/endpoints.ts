@@ -39,6 +39,10 @@ export const ENDPOINTS = {
     generate: '/schedule/generate',
     updateCell: '/schedule/update',
   },
+  /** WebSocket path for AskAI. ws(s):// is derived from VITE_API_BASE_URL. */
+  chat: {
+    socket: '/chat_ws',
+  },
 } as const
 
 /** HTTP verbs, kept here so a backend that prefers PUT over PATCH is a one-line change. */

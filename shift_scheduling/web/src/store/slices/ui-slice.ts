@@ -1,6 +1,7 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 import type { Staff } from '@/types'
 import { currentWeekStart } from '@/lib/dates'
+import { readStoredOpen, writeStoredOpen } from '@/components/ask-ai/chat-storage'
 
 export interface Toast {
   id: string
@@ -21,6 +22,8 @@ interface UiState {
   departmentSearch: string
   staffSort: SortState
   toasts: Toast[]
+  /** AskAI side panel. Not route-derived: it floats over every app page. */
+  askAiOpen: boolean
 }
 
 /**
@@ -35,6 +38,7 @@ const initialState: UiState = {
   departmentSearch: '',
   staffSort: { key: 'name', dir: 'asc' },
   toasts: [],
+  askAiOpen: readStoredOpen(),
 }
 
 let toastSeq = 0
@@ -68,6 +72,14 @@ const uiSlice = createSlice({
     dismissToast(state, action: PayloadAction<string>) {
       state.toasts = state.toasts.filter((t) => t.id !== action.payload)
     },
+    toggleAskAi(state) {
+      state.askAiOpen = !state.askAiOpen
+      writeStoredOpen(state.askAiOpen)
+    },
+    setAskAiOpen(state, action: PayloadAction<boolean>) {
+      state.askAiOpen = action.payload
+      writeStoredOpen(state.askAiOpen)
+    },
   },
 })
 
@@ -78,6 +90,8 @@ export const {
   setStaffSort,
   pushToast,
   dismissToast,
+  toggleAskAi,
+  setAskAiOpen,
 } = uiSlice.actions
 
 export default uiSlice.reducer

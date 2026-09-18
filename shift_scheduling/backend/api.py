@@ -1,8 +1,16 @@
-from fastapi import FastAPI, Depends, HTTPException, Query, status
+from fastapi import (
+    FastAPI,
+    Depends,
+    HTTPException,
+    Query,
+    status,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from fastapi.middleware.cors import CORSMiddleware
-from sqlmodel import select
+from sqlmodel import Session, select
 from contextlib import asynccontextmanager
-from db import SessionDep, create_db_and_tables
+from db import SessionDep, create_db_and_tables, engine
 from models import *
 from sqlalchemy.orm import selectinload
 from sqlalchemy.exc import IntegrityError
@@ -18,7 +26,9 @@ from auth.auth import (
     create_access_token,
     ACCESS_TOKEN_EXPIRE_MINUTES,
     UserQuery,
+    user_from_token,
 )
+from ai import ai_chat
 
 # logging.basicConfig(level=logging.INFO)
 # logger = logging.getLogger(__name__)
@@ -459,3 +469,50 @@ def delete_department(id, db: SessionDep, user: UserQuery):
     db.refresh(department)
 
     return department
+
+
+@app.websocket("/chat_ws")
+async def chat_endpoint(websocket: WebSocket):
+    # Browsers can't set headers on a WebSocket, so the JWT comes as ?token=.
+    # A short session: don't hold a DB connection for the socket's lifetime.
+    token = websocket.query_params.get("token")
+    with Session(engine) as db:
+        user = user_from_token(token, db) if token else None
+
+    # Accept before closing so the client sees 4401, not a bare 1006.
+    await websocket.accept()
+    if user is None:
+        await websocket.close(code=4401, reason="Unauthorized")
+        return
+
+    try:
+        while True:
+            message = await websocket.receive_json()
+            # The client sends {id, role: user|ai|error, text}; OpenAI wants
+            # {role: user|assistant, content}. Error bubbles aren't conversation.
+            input_list = [
+                {
+                    "role": "assistant" if item["role"] == "ai" else "user",
+                    "content": item["text"],
+                }
+                for item in message.get("input_list", [])
+                if item.get("role") in ("user", "ai")
+            ]
+            try:
+                ai_response = await ai_chat(input_list=input_list, user=user)
+                await websocket.send_json({"message": ai_response})
+            except Exception as e:
+                # print(f"chat error: {e!r}")
+                # await websocket.send_json(
+                #     {"error": "Something went wrong. Please try again."}
+                # )
+                input_list.append(
+                    {
+                        "role": "assistant",
+                        "error": "Something went wrong. Please try again.",
+                    }
+                )
+                ai_response = await ai_chat(input_list=input_list, user=user)
+                await websocket.send_json({"message": ai_response})
+    except WebSocketDisconnect:
+        pass
