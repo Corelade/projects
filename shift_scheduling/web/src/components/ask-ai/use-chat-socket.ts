@@ -4,7 +4,7 @@ import { ENDPOINTS } from '@/store/api/endpoints'
 import { signedOut } from '@/store/slices/auth-slice'
 // import { readStoredMessages, writeStoredMessages } from './chat-storage'
 
-const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'false'
+const USE_MOCKS = import.meta.env.VITE_USE_MOCKS === 'true'
 
 export type ChatRole = 'user' | 'ai' | 'error'
 
