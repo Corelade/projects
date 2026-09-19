@@ -163,3 +163,42 @@ class Notification(SQLModel, table=True):
 
     read_at: datetime | None = Field(default=None, nullable=True)
     created_at: datetime = Field(default_factory=datetime.now)
+
+
+class AiChat(SQLModel, table=True):
+    """
+    One finished AskAI conversation, saved once when its WebSocket closes. The
+    counts are denormalised so insights (busy users, flaky tools) are cheap.
+    """
+
+    id: int | None = Field(primary_key=True, default=None)
+    user_id: int = Field(foreign_key="user.id", index=True)
+
+    started_at: datetime
+    ended_at: datetime
+
+    message_count: int = Field(default=0)  # user + assistant messages
+    tool_call_count: int = Field(default=0)
+    error_count: int = Field(default=0)  # failed tool calls and failed replies
+
+    messages: list["AiChatMessage"] = Relationship(back_populates="chat")
+
+
+class AiChatMessage(SQLModel, table=True):
+    "One entry in a saved chat: a user message, an assistant reply, a tool call, or an error"
+
+    id: int | None = Field(primary_key=True, default=None)
+    chat_id: int = Field(foreign_key="aichat.id", index=True)
+    position: int  # order within the chat
+
+    role: str  # user | assistant | tool | error
+    content: str = Field(sa_column=Column(Text, nullable=False))
+
+    # Tool calls only: what the model asked for, and whether it came back as an error
+    tool_name: str | None = Field(default=None, nullable=True, index=True)
+    tool_arguments: dict | None = Field(default=None, sa_column=Column(JSON, nullable=True))
+    is_error: bool = Field(default=False)
+
+    created_at: datetime
+
+    chat: AiChat = Relationship(back_populates="messages")

@@ -1098,6 +1098,68 @@ def delete_department(id, db: SessionDep, user: UserQuery):
     return department
 
 
+class ChatTranscript:
+    "An AskAI chat collected in memory while its socket is open, saved once at the end"
+
+    def __init__(self, user_id: int):
+        self.user_id = user_id
+        self.started_at = datetime.datetime.now()
+        self.entries: list[dict] = []
+
+    def add(self, role: str, content: str, *, is_error: bool = False, **tool):
+        self.entries.append(
+            {
+                "role": role,
+                "content": content or "",
+                "is_error": is_error,
+                "created_at": datetime.datetime.now(),
+                **tool,
+            }
+        )
+
+    def add_tools(self, trace: list[dict]):
+        for call in trace:
+            try:
+                output = json.loads(call["output"])
+                # Some tools return an already-JSON string; look one level in
+                if isinstance(output, str):
+                    output = json.loads(output)
+            except (TypeError, ValueError):
+                output = None
+            failed = isinstance(output, dict) and "error" in output
+            self.add(
+                "tool",
+                call["output"][:4000],
+                is_error=failed,
+                tool_name=call["name"],
+                tool_arguments=call["arguments"],
+            )
+
+    def save(self):
+        "Nothing is saved for a chat where the user never said anything"
+        if not any(e["role"] == "user" for e in self.entries):
+            return
+        try:
+            with Session(engine) as db:
+                chat = AiChat(
+                    user_id=self.user_id,
+                    started_at=self.started_at,
+                    ended_at=datetime.datetime.now(),
+                    message_count=sum(e["role"] in ("user", "assistant") for e in self.entries),
+                    tool_call_count=sum(e["role"] == "tool" for e in self.entries),
+                    error_count=sum(e["is_error"] for e in self.entries),
+                )
+                chat.messages = [
+                    AiChatMessage(position=i, **entry)
+                    for i, entry in enumerate(self.entries)
+                ]
+                db.add(chat)
+                db.commit()
+        except Exception as e:
+            # Losing a transcript must never surface as a chat error
+            print(f"could not save AI chat: {e!r}")
+
+
 @app.websocket("/chat_ws")
 async def chat_endpoint(websocket: WebSocket):
     # Browsers can't set headers on a WebSocket, so the JWT comes as ?token=.
@@ -1112,6 +1174,10 @@ async def chat_endpoint(websocket: WebSocket):
         await websocket.close(code=4401, reason="Unauthorized")
         return
 
+    # The chat lives as long as this socket (the client doesn't persist it), so
+    # it's kept in memory here and saved once, when the socket closes.
+    transcript = ChatTranscript(user.id)
+
     try:
         while True:
             message = await websocket.receive_json()
@@ -1125,21 +1191,39 @@ async def chat_endpoint(websocket: WebSocket):
                 for item in message.get("input_list", [])
                 if item.get("role") in ("user", "ai")
             ]
+            user_text = message.get("current_message") or next(
+                (i["content"] for i in reversed(input_list) if i["role"] == "user"), ""
+            )
+            transcript.add("user", user_text)
+
+            trace = []
             try:
-                ai_response = await ai_chat(input_list=input_list, user=user)
+                ai_response = await ai_chat(input_list=input_list, user=user, trace=trace)
+                transcript.add_tools(trace)
+                transcript.add("assistant", ai_response)
                 await websocket.send_json({"message": ai_response})
+            except WebSocketDisconnect:
+                raise
             except Exception as e:
                 # print(f"chat error: {e!r}")
                 # await websocket.send_json(
                 #     {"error": "Something went wrong. Please try again."}
                 # )
+                transcript.add_tools(trace)
+                transcript.add("error", repr(e)[:1000], is_error=True)
                 input_list.append(
                     {
                         "role": "assistant",
                         "error": "Something went wrong. Please try again.",
                     }
                 )
-                ai_response = await ai_chat(input_list=input_list, user=user)
+                trace = []
+                ai_response = await ai_chat(input_list=input_list, user=user, trace=trace)
+                transcript.add_tools(trace)
+                transcript.add("assistant", ai_response)
                 await websocket.send_json({"message": ai_response})
     except WebSocketDisconnect:
         pass
+    finally:
+        # Any way the chat ends — tab closed, reload, sign out, or a failure above.
+        transcript.save()

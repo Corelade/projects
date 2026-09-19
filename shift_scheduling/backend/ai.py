@@ -1029,8 +1029,11 @@ tool_functions = {
 
 
 # if __name__ == "__main__":
-async def ai_chat(input_list: list, user: User):
-    "Converse with AI to perform functions"
+async def ai_chat(input_list: list, user: User, trace: list | None = None):
+    """
+    Converse with AI to perform functions. Pass `trace` to collect each tool call
+    made along the way ({name, arguments, output}), e.g. for saving the chat.
+    """
 
     resp = await call_openai(input_list)
 
@@ -1042,6 +1045,7 @@ async def ai_chat(input_list: list, user: User):
             if item.type == "function_call":
                 tool_called = True
 
+                arguments = {}
                 try:
                     function = tool_functions[item.name]
                     arguments = json.loads(item.arguments or "{}")
@@ -1055,13 +1059,22 @@ async def ai_chat(input_list: list, user: User):
                 if hasattr(result, "model_dump"):
                     result = result.model_dump()
 
+                output = json.dumps(result, default=str)
                 input_list.append(
                     {
                         "type": "function_call_output",
                         "call_id": item.call_id,
-                        "output": json.dumps(result, default=str),
+                        "output": output,
                     }
                 )
+                if trace is not None:
+                    trace.append(
+                        {
+                            "name": item.name,
+                            "arguments": {k: v for k, v in arguments.items() if k != "user"},
+                            "output": output,
+                        }
+                    )
             else:
                 if item.type == "message":
                     for content in item.content:
