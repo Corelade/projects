@@ -8,6 +8,8 @@ from typing import Literal, TypedDict
 
 
 class ScheduleError(Exception):
+    """Generic error message and status code"""
+
     def __init__(self, message, status_code=400) -> None:
         self.message = message
         self.status_code = status_code
@@ -31,7 +33,10 @@ DepartmentAssignments = dict[DepartmentData, ShiftAssignments]
 AssignmentStruct = dict[str, DepartmentAssignments]
 
 
-def get_assignment_departments(assignment: AssignmentStruct):
+def get_assignment_departments(assignment: AssignmentStruct) -> list[DepartmentData]:
+    """Returns the departments in an assignment"""
+    if not assignment:
+        raise ValueError("Assignment can not be empty")
     departments = set([department for val in assignment.values() for department in val])
     return departments
 
@@ -49,7 +54,13 @@ def get_staff_in_day(
         "sunday",
     ],
 ):
-    "This function is to get the unique staff present in a given day"
+    "Get the unique staff present in a given day"
+    if query_day not in DAY_OF_WEEK:
+        raise ValueError(f"{query_day} not valid. Select from {DAY_OF_WEEK}")
+
+    if not assignment:
+        raise ValueError("Assignment can not be empty")
+
     day_staff = set(
         [
             stf
@@ -78,7 +89,6 @@ def get_staff_shift_count_in_day(
     ],
 ):
     "This function is to get the number of shifts a staff has worked in a given day"
-    # print(assignment, 'in', get_staff_shift_count_in_day.__name__)
     shift_count = len(
         [
             stf
@@ -112,11 +122,13 @@ def get_staff_in_shifts(
             # and stf == staff_member
         ]
     )
-    print(staff_shifts)
     return staff_shifts
 
 
 def to_normal_dict(d):
+    """
+    Convert dictionary with staff objects to printable json format by changing class instances to their str form
+    """
     if isinstance(d, dict):
         return {str(k): to_normal_dict(v) for k, v in d.items()}
 
@@ -622,20 +634,6 @@ def update_schedule(
     """
 
     # TODO Breaks when i add new staff and the domains have already been filled
-    # print([(st, st.hours_worked, st.contract_hours) for st in staff])
-
-    # print(
-    #     "old count",
-    #     len(
-    #         [
-    #             stf
-    #             for day, val in assignment.items()
-    #             for department in val.values()
-    #             for staff_list in department.values()
-    #             for stf in staff_list
-    #         ]
-    #     ),
-    # )
 
     if not is_feasibile(departments, staff):
         return
@@ -796,7 +794,7 @@ def update_schedule(
     #         ]
     #     ),
     # )
-    
+
     ans = backtrack(new_assignment, departments, staff, domains, print_domain=False)
     return {"regenerated": ans != assignment, "result": ans}
 
