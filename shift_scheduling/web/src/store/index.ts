@@ -11,6 +11,9 @@ import './api/staff-api'
 import './api/departments-api'
 import './api/schedule-api'
 import './api/auth-api'
+import './api/portal-api'
+import './api/requests-api'
+import './api/notifications-api'
 
 export const store = configureStore({
   reducer: {

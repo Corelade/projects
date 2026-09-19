@@ -11,6 +11,7 @@ interface RawStaff {
   contract_hours: number
   min_hours: number
   email: string
+  has_account?: boolean
   exclusions: {
     id: number
     type: 'day' | 'shift'
@@ -44,6 +45,8 @@ export const staffApi = baseApi.injectEndpoints({
           shift_exclusions: row.exclusions
             .filter((exclusion) => exclusion.type === 'shift')
             .map((exclusion) => exclusion.value as Shift),
+
+          has_account: row.has_account ?? false,
         })),
 
       providesTags: (result) =>
@@ -66,6 +69,15 @@ export const staffApi = baseApi.injectEndpoints({
       invalidatesTags: [{ type: 'Staff', id: 'LIST' }, 'Schedule'],
     }),
 
+    // Invite links — disabled while staff emails are placeholders.
+    // /** A fresh one-time portal link; replaces any earlier one for this person. */
+    // createInvite: build.mutation<Invite, number>({
+    //   query: (id) => ({
+    //     url: ENDPOINTS.staff.invite(id),
+    //     method: METHODS.create,
+    //   }),
+    // }),
+
     updateStaff: build.mutation<Staff, Staff>({
       query: (body) => ({
         url: ENDPOINTS.staff.update(body.id),
@@ -77,6 +89,9 @@ export const staffApi = baseApi.injectEndpoints({
         { type: 'Staff', id: arg.id },
         { type: 'Staff', id: 'LIST' },
         'Schedule',
+        'Portal',
+        // Requests show current availability to compare against.
+        'AvailabilityRequest',
       ],
     }),
 
@@ -95,6 +110,7 @@ export const staffApi = baseApi.injectEndpoints({
 export const {
   useGetStaffQuery,
   useCreateStaffMutation,
+  // useCreateInviteMutation,
   useUpdateStaffMutation,
   useDeleteStaffMutation,
 } = staffApi

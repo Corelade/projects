@@ -32,6 +32,8 @@ import {
 } from '@/store/api/staff-api'
 import { pushToast, setStaffSearch, setStaffSort } from '@/store/slices/ui-slice'
 import { POSITION_LABELS, type Staff, type StaffInput } from '@/types'
+// Invite links — disabled while staff emails are placeholders.
+// import InviteDialog from './invite-dialog'
 import StaffForm, { STAFF_FORM_ID } from './staff-form'
 import './staff.css'
 
@@ -55,6 +57,7 @@ export default function StaffPage() {
   const [dirty, setDirty] = useState(false)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<Staff | null>(null)
+  // const [inviting, setInviting] = useState<Staff | null>(null)
 
   const editing = isEdit ? data?.find((s) => s.id === Number(id)) : undefined
   const drawerOpen = isNew || (isEdit && Boolean(editing))
@@ -220,6 +223,7 @@ export default function StaffPage() {
                         Minimum
                       </TH>
                       <TH className="col-unavailable">Unavailable</TH>
+                      <TH className="col-portal">Staff portal</TH>
                       <TH className="col-actions">
                         <span className="sr-only">Actions</span>
                       </TH>
@@ -255,8 +259,32 @@ export default function StaffPage() {
                         <TD className="col-unavailable text-fg-muted">
                           {summariseExclusions(s.day_exclusions, s.shift_exclusions)}
                         </TD>
+                        <TD className="col-portal">
+                          {s.has_account ? (
+                            <Badge variant="success">Signed up</Badge>
+                          ) : (
+                            <Badge variant="warning">Not signed up</Badge>
+                          )}
+                        </TD>
                         <TD className="col-actions">
                           <RowActions>
+                            {/* Invite links — disabled while staff emails are placeholders.
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              aria-label={
+                                s.has_account
+                                  ? `Password reset link for ${fullName(s)}`
+                                  : `Invite ${fullName(s)} to the staff portal`
+                              }
+                              title={s.has_account ? 'Reset link' : 'Invite link'}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setInviting(s)
+                              }}
+                            >
+                              <Icon name={s.has_account ? 'refresh' : 'plus'} size={16} />
+                            </Button> */}
                             <Button
                               variant="ghost"
                               size="sm"
@@ -345,6 +373,11 @@ export default function StaffPage() {
           onCancel={() => setConfirmDiscard(false)}
         />
       )}
+
+      {/* Invite links — disabled while staff emails are placeholders.
+      {inviting && (
+        <InviteDialog staff={inviting} onClose={() => setInviting(null)} />
+      )} */}
 
       {pendingDelete && (
         <ConfirmDialog

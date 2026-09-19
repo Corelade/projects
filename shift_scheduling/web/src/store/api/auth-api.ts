@@ -8,13 +8,19 @@ export interface Credentials {
   password: string
 }
 
+export type Role = 'admin' | 'staff'
+
 export interface AuthUser {
+  /** A user id for admins, a staff id for staff. */
   id: number
+  /** The admin's username, or the staff member's full name. */
   username: string
+  /** Admins run the rota; staff only ever see the portal. */
+  role: Role
 }
 
 /** Exactly what the server sends: backend/structs/auth_struct.py AuthResponse. */
-interface RawAuth {
+export interface RawAuth {
   token: string
   user: AuthUser
 }
@@ -53,6 +59,14 @@ export function jwtExpiry(token: string): number | null {
   }
 }
 
+export function toAuthResult(raw: RawAuth): AuthResult {
+  return {
+    token: raw.token,
+    user: raw.user,
+    expiresAt: jwtExpiry(raw.token),
+  }
+}
+
 // interface SignupResult {
 //   'success': boolean
 //   'message': string
@@ -66,11 +80,16 @@ export const authApi = baseApi.injectEndpoints({
         method: METHODS.create,
         body,
       }),
-      transformResponse: (raw: RawAuth): AuthResult => ({
-        token: raw.token,
-        user: raw.user,
-        expiresAt: jwtExpiry(raw.token),
+      transformResponse: toAuthResult,
+    }),
+
+    /** Trades the current, still-valid token for a fresh one. See use-session-keep-alive.ts. */
+    refreshToken: build.mutation<AuthResult, void>({
+      query: () => ({
+        url: ENDPOINTS.auth.refresh,
+        method: METHODS.create,
       }),
+      transformResponse: toAuthResult,
     }),
 
     signUp: build.mutation<void, Credentials>({
@@ -83,4 +102,4 @@ export const authApi = baseApi.injectEndpoints({
   }),
 })
 
-export const { useSignInMutation, useSignUpMutation } = authApi
+export const { useSignInMutation, useSignUpMutation, useRefreshTokenMutation } = authApi

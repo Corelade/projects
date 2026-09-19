@@ -19,6 +19,81 @@ from sqlalchemy.orm import selectinload, with_loader_criteria
 # create a how to page to explain how it works (include how many hours is one shift)
 
 
+def check_staff_hours(
+    name, contract_hours, min_hours, shift_exclusions, day_exclusions
+):
+    "Validate hours/exclusions with StaffData without leaving it in the global list"
+    staff_data = StaffData(
+        name=name,
+        shift_exclusion_list=shift_exclusions,
+        day_exclusion_list=day_exclusions,
+        contract_hours=contract_hours,
+        min_hours=min_hours,
+    )
+    StaffData.remove_staff(staff_data)
+
+
+def staff_exclusions(staff: Staff) -> tuple[list[str], list[str]]:
+    "(day exclusions, shift exclusions) for a staff member"
+    return (
+        [e.value for e in staff.exclusions if e.type == ExclusionType.day],
+        [e.value for e in staff.exclusions if e.type == ExclusionType.shift],
+    )
+
+
+def set_staff_exclusions(
+    db, staff: Staff, days: list[str] | None = None, shifts: list[str] | None = None
+) -> bool:
+    """
+    Replace a staff member's day and/or shift exclusions. None leaves that kind
+    as it is. Returns whether anything actually changed. The caller commits.
+    """
+    current_days, current_shifts = staff_exclusions(staff)
+    changed = False
+
+    for kind, new, current in (
+        (ExclusionType.day, days, current_days),
+        (ExclusionType.shift, shifts, current_shifts),
+    ):
+        if new is None:
+            continue
+        if sorted(set(new)) != sorted(set(current)):
+            changed = True
+
+        for exclusion in staff.exclusions:
+            if exclusion.type == kind:
+                db.delete(exclusion)
+
+        for value in dict.fromkeys(new):
+            db.add(Exclusion(staff=staff, type=kind, value=value))
+
+    return changed
+
+
+def notify(
+    db,
+    *,
+    kind: str,
+    message: str,
+    user_id: int | None = None,
+    staff_id: int | None = None,
+    request_id: int | None = None,
+):
+    "Queue a notification for one recipient (an admin or a staff member). The caller commits"
+    if (user_id is None) == (staff_id is None):
+        raise ValueError("A notification needs exactly one recipient")
+
+    db.add(
+        Notification(
+            recipient_user_id=user_id,
+            recipient_staff_id=staff_id,
+            kind=kind,
+            message=message,
+            request_id=request_id,
+        )
+    )
+
+
 def week_str_to_object(week_start: str):
     week_date_object = datetime.strptime(week_start, "%Y-%m-%d")
     return week_date_object

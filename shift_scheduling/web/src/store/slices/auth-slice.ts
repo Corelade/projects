@@ -54,7 +54,12 @@ export function readStoredSession(): Session | null {
       return null
     }
 
-    return parsed as Session
+    // Sessions stored before roles existed were all admin sessions.
+    const user = parsed.user!
+    return {
+      ...(parsed as Session),
+      user: { ...user, role: user.role === 'staff' ? 'staff' : 'admin' },
+    }
   } catch {
     // Unreadable storage, or a shape written by an older build.
     return null

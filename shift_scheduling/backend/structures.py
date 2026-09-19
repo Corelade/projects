@@ -104,6 +104,7 @@ class StaffResponse(BaseModel):
     min_hours: int
     email: EmailStr
     exclusions: list[ExclusionRead] = []
+    has_account: bool = False
 
 
 class ScheduleItem(BaseModel):
@@ -144,3 +145,86 @@ class UpdateCellRequest(BaseModel):
 
 class WeekRequest(BaseModel):
     week_start: str
+
+
+class PortalProfileResponse(BaseModel):
+    id: int
+    first_name: str
+    last_name: str
+    email: str
+    position: str
+    contract_hours: int
+    min_hours: int
+    day_exclusions: list[DAY]
+    shift_exclusions: list[SHIFTS]
+    has_account: bool
+
+
+class PortalShift(BaseModel):
+    date: date
+    day: DAY
+    shift: SHIFTS
+    department_id: int
+    department_name: str
+
+
+class PortalWeekResponse(BaseModel):
+    week_start: date
+    week_end: date
+    published: bool
+    hours: int
+    shifts: list[PortalShift]
+
+
+class AvailabilityRequestCreate(BaseModel):
+    "Staff: the full availability they're asking for"
+    day_exclusions: list[DAY]
+    shift_exclusions: list[SHIFTS]
+    note: str | None = Field(default=None, max_length=500)
+
+
+class AvailabilityApprove(BaseModel):
+    "Admin: approve as requested, or send adjusted exclusions to approve with changes"
+    day_exclusions: list[DAY] | None = None
+    shift_exclusions: list[SHIFTS] | None = None
+    admin_note: str | None = Field(default=None, max_length=500)
+
+
+class AvailabilityReject(BaseModel):
+    admin_note: str | None = Field(default=None, max_length=500)
+
+
+class AvailabilityRequestResponse(BaseModel):
+    id: int
+    staff_id: int
+    staff_name: str
+    status: str
+    day_exclusions: list[str]
+    shift_exclusions: list[str]
+    # The staff member's availability right now, to compare against the request
+    current_day_exclusions: list[str]
+    current_shift_exclusions: list[str]
+    note: str | None
+    admin_note: str | None
+    created_at: datetime
+    reviewed_at: datetime | None
+
+
+class NotificationResponse(BaseModel):
+    id: int
+    kind: str
+    message: str
+    request_id: int | None
+    read: bool
+    created_at: datetime
+
+
+class NotificationListResponse(BaseModel):
+    unread: int
+    items: list[NotificationResponse]
+
+
+class MarkReadRequest(BaseModel):
+    "No ids marks everything read"
+    ids: list[int] | None = None
+

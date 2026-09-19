@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Navigate, useLocation, useSearchParams } from 'react-router'
 
 import { useAppSelector } from '@/store'
+import type { Role } from '@/store/api/auth-api'
 
 /**
  * Gate for everything behind sign-in.
@@ -25,6 +26,30 @@ export default function RequireAuth({ children }: { children: ReactNode }) {
     return <Navigate to={`/sign-in?from=${encodeURIComponent(from)}`} replace />
   }
 
+  // The admin app is admin-only. A staff token would 401 on every request
+  // here anyway (and sign them out); send them to their own page instead.
+  if (session.user.role === 'staff') return <Navigate to="/portal" replace />
+
+  return <>{children}</>
+}
+
+/**
+ * The staff portal's gate. Any session gets in — staff see themselves, admins
+ * pick one of their staff — and no session goes to the portal's own sign-in.
+ */
+export function RequirePortal({ children }: { children: ReactNode }) {
+  const { session, hydrated } = useAppSelector((s) => s.auth)
+  const location = useLocation()
+
+  if (!hydrated) return null
+
+  if (!session) {
+    const from = `${location.pathname}${location.search}`
+    return (
+      <Navigate to={`/portal/sign-in?from=${encodeURIComponent(from)}`} replace />
+    )
+  }
+
   return <>{children}</>
 }
 
@@ -37,12 +62,32 @@ export default function RequireAuth({ children }: { children: ReactNode }) {
  * page is still mounted, so a page-level navigate() would race this one and
  * usually lose — which silently dropped the ?from= destination.
  */
-export function RedirectIfSignedIn({ children }: { children: ReactNode }) {
+export function RedirectIfSignedIn({
+  children,
+  fallback = '/schedule',
+  audience = 'admin',
+}: {
+  children: ReactNode
+  /** Where to land when there's no ?from= — the portal's sign-in lands on /portal. */
+  fallback?: string
+  /** Whose auth page this is. Each side's pages send the other side home. */
+  audience?: Role
+}) {
   const { session, hydrated } = useAppSelector((s) => s.auth)
   const [searchParams] = useSearchParams()
 
   if (!hydrated) return null
-  if (session) return <Navigate to={safeFrom(searchParams.get('from'))} replace />
+  if (session) {
+    // Staff only have the portal, whatever ?from= says. An admin on a staff
+    // auth page goes back to the admin app, not into the staff view.
+    const to =
+      session.user.role === 'staff'
+        ? '/portal'
+        : audience === 'staff'
+          ? '/schedule'
+          : safeFrom(searchParams.get('from'), fallback)
+    return <Navigate to={to} replace />
+  }
 
   return <>{children}</>
 }
@@ -53,7 +98,7 @@ export function RedirectIfSignedIn({ children }: { children: ReactNode }) {
  * authenticate. Only same-site absolute paths are honoured — and `//host` is
  * protocol-relative, which the browser treats as another origin.
  */
-function safeFrom(from: string | null): string {
-  if (!from || !from.startsWith('/') || from.startsWith('//')) return '/schedule'
+function safeFrom(from: string | null, fallback: string): string {
+  if (!from || !from.startsWith('/') || from.startsWith('//')) return fallback
   return from
 }

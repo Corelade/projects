@@ -6,17 +6,22 @@ import Logo from '@/components/logo/logo'
 import { useAppDispatch, useAppSelector } from '@/store'
 import { signedOut } from '@/store/slices/auth-slice'
 import { toggleAskAi } from '@/store/slices/ui-slice'
+import { useGetAvailabilityRequestsQuery } from '@/store/api/requests-api'
 
 interface NavItem {
   to: string
   label: string
   icon: IconName
+  /** Shows a count next to the label, e.g. pending requests. */
+  count?: number
 }
 
 const NAV: NavItem[] = [
   { to: '/schedule', label: 'Schedule', icon: 'calendar' },
   { to: '/staff', label: 'Staff', icon: 'users' },
   { to: '/departments', label: 'Departments', icon: 'building' },
+  { to: '/requests', label: 'Requests', icon: 'inbox' },
+  { to: '/portal', label: 'Staff portal', icon: 'eye' },
 ]
 
 /** Shared by the two footer items, so they stay identical across all three
@@ -44,6 +49,10 @@ export interface SidebarProps {
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const dispatch = useAppDispatch()
   const askAiOpen = useAppSelector((s) => s.ui.askAiOpen)
+  const pending = useGetAvailabilityRequestsQuery('pending').data?.length ?? 0
+  const nav = NAV.map((item) =>
+    item.to === '/requests' ? { ...item, count: pending } : item,
+  )
 
   /**
    * Sign-out is client-only — there's no /auth/logout endpoint — and it leaves
@@ -122,14 +131,16 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
 
         <nav className="flex-1 px-3 py-2 lg:px-2 xl:px-3" aria-label="Main">
           <ul className="flex flex-col gap-0.5">
-            {NAV.map((item) => (
+            {nav.map((item) => (
               <li key={item.to}>
                 <NavLink
                   to={item.to}
                   onClick={onClose}
                   /* The label is display:none in the rail, so the accessible
                      name has to come from the attribute at every width. */
-                  aria-label={item.label}
+                  aria-label={
+                    item.count ? `${item.label}, ${item.count} pending` : item.label
+                  }
                   title={item.label}
                   className={({ isActive }) =>
                     cn(
@@ -146,8 +157,19 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
                       {isActive && (
                         <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-brand-600" />
                       )}
-                      <Icon name={item.icon} size={20} className="shrink-0" />
+                      <span className="relative shrink-0">
+                        <Icon name={item.icon} size={20} />
+                        {/* In the icon rail the label is hidden, so the count rides on the icon. */}
+                        {Boolean(item.count) && (
+                          <span className="absolute -right-1 -top-1 hidden size-2 rounded-full bg-danger-600 lg:block xl:hidden" />
+                        )}
+                      </span>
                       <span className="lg:hidden xl:inline">{item.label}</span>
+                      {Boolean(item.count) && (
+                        <span className="tabular ml-auto rounded-full bg-danger-600 px-1.5 text-caption font-semibold text-fg-inverse lg:hidden xl:inline">
+                          {item.count}
+                        </span>
+                      )}
                     </>
                   )}
                 </NavLink>

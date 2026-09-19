@@ -14,6 +14,8 @@ export interface Staff {
   day_exclusions: Day[]
   /** "Shifts not available". */
   shift_exclusions: Shift[]
+  /** Has set a password for the staff portal. Server-owned; absent on input. */
+  has_account?: boolean
 }
 
-export type StaffInput = Omit<Staff, 'id'>
+export type StaffInput = Omit<Staff, 'id' | 'has_account'>

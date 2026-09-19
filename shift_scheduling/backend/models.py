@@ -3,8 +3,7 @@ from enum import Enum
 from datetime import date, datetime
 from pydantic import EmailStr, ConfigDict, model_validator
 from structures import ExclusionType
-from sqlalchemy import UniqueConstraint
-
+from sqlalchemy import UniqueConstraint, Column, JSON, Text
 
 class User(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
@@ -34,12 +33,23 @@ class Staff(SQLModel, table=True):
     deleted: bool = Field(default=False)
     creator_id: int = Field(foreign_key="user.id", nullable=True)
 
+    # Staff portal account. password stays None until the staff member creates
+    # one (has_account below). The invite columns belong to the invite-link
+    # flow, which is disabled while staff emails are placeholders.
+    password: str | None = Field(default=None, nullable=True)
+    invite_token_hash: str | None = Field(default=None, nullable=True, index=True)
+    invite_expires_at: datetime | None = Field(default=None, nullable=True)
+
     exclusions: list["Exclusion"] = Relationship(back_populates="staff")
     schedules: list["Schedule"] = Relationship(back_populates="staff")
 
     weekly_hours_worked: list["StaffWeeklyHours"] = Relationship(back_populates="staff")
 
     creator: User = Relationship(back_populates="staff")
+
+    @property
+    def has_account(self) -> bool:
+        return self.password is not None
 
 
 class Exclusion(SQLModel, table=True):
@@ -114,3 +124,42 @@ class StaffWeeklyHours(SQLModel, table=True):
     week: ScheduleWeek = Relationship(back_populates="staff_weekly_hours_worked")
     staff: Staff = Relationship(back_populates="weekly_hours_worked")
     creator: User = Relationship(back_populates="weekly_hours_worked")
+
+
+class AvailabilityRequest(SQLModel, table=True):
+    """
+    A staff member asking to change their availability. Holds the full requested
+    state (not a diff); at most one is pending per staff member.
+    """
+
+    id: int | None = Field(primary_key=True, default=None)
+    staff_id: int = Field(foreign_key="staff.id", index=True)
+    # The admin who owns the staff member, and so reviews the request
+    creator_id: int = Field(foreign_key="user.id", index=True)
+
+    day_exclusions: list[str] = Field(default_factory=list, sa_column=Column(JSON, nullable=False))
+    shift_exclusions: list[str] = Field(default_factory=list, sa_column=Column(JSON, nullable=False))
+    note: str | None = Field(default=None, sa_column=Column(Text, nullable=True))
+
+    status: str = Field(default="pending", index=True)  # pending | approved | rejected | cancelled
+    admin_note: str | None = Field(default=None, sa_column=Column(Text, nullable=True))
+
+    created_at: datetime = Field(default_factory=datetime.now)
+    reviewed_at: datetime | None = Field(default=None, nullable=True)
+
+    staff: Staff = Relationship()
+
+
+class Notification(SQLModel, table=True):
+    "An in-app notification for exactly one recipient: an admin (user) or a staff member"
+
+    id: int | None = Field(primary_key=True, default=None)
+    recipient_user_id: int | None = Field(default=None, foreign_key="user.id", index=True)
+    recipient_staff_id: int | None = Field(default=None, foreign_key="staff.id", index=True)
+
+    kind: str
+    message: str = Field(sa_column=Column(Text, nullable=False))
+    request_id: int | None = Field(default=None, foreign_key="availabilityrequest.id")
+
+    read_at: datetime | None = Field(default=None, nullable=True)
+    created_at: datetime = Field(default_factory=datetime.now)

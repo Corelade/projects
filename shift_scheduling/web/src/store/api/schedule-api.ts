@@ -70,6 +70,7 @@ export const scheduleApi = baseApi.injectEndpoints({
       // extraOptions: { mock: 'schedule.generate' },
       invalidatesTags: (_r, _e, weekStart) => [
         { type: 'Schedule', id: weekStart },
+        'Portal',
       ],
     }),
 
@@ -117,7 +118,8 @@ export const scheduleApi = baseApi.injectEndpoints({
           undo.undo()
         }
       },
-      // No invalidation — the patch above is the update.
+      // The patch above is the grid's update; the portal view refetches.
+      invalidatesTags: ['Portal'],
     }),
   }),
 })
