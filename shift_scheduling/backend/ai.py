@@ -15,7 +15,13 @@ from typing import get_args
 from collections import Counter
 from datetime import datetime, timedelta
 from app import ScheduleError
-from utils import create_schedule, get_week, get_week_schedule, save_schedule
+from utils import (
+    check_staff_hours,
+    create_schedule,
+    get_week,
+    get_week_schedule,
+    save_schedule,
+)
 from structures import *
 
 # TODO AI
@@ -157,7 +163,7 @@ staffLookupProperties = {
     "email": {"type": "string", "description": "The staff email."},
     "name": {
         "type": "string",
-        "description": "The staff first name, last name or full name.",
+        "description": "Just the person's name (first, last, full or the start of it), e.g. 'benjamin'. No other words.",
     },
 }
 
@@ -182,48 +188,66 @@ def create_department(
             department_objects = [department_objects]
         departments = [DepartmentData(**dept) for dept in department_objects]
         department_json = []
-        # add to db
 
-        with Session(engine) as db:
-            for dept in departments:
-                try:
-                    department_instance = Department(
-                        name=dept.name,
-                        min_staff=dept.min_staff,
-                        max_staff=dept.max_staff,
-                        creator=user,
-                    )
-                    db.add(department_instance)
-                    db.commit()
-                except IntegrityError as e:
-                    return json.dumps({"error": str(e), "type": "IntegrityError"})
-            return department_json
+        # add to db
+        # creator_id, not creator=user: the chat reuses one detached User for the
+        # whole conversation, and attaching it here expires it when this session
+        # closes, breaking every later tool call with DetachedInstanceError.
+        department_instances = [
+            Department(
+                name=dept.name,
+                min_staff=dept.min_staff,
+                max_staff=dept.max_staff,
+                creator_id=user.id,
+            )
+            for dept in departments
+        ]
+        try:
+            with Session(engine) as db:
+                db.add_all(department_instances)
+                db.commit()
+                department_json = [
+                    DepartmentResponse.model_validate(dept, from_attributes=True).model_dump()
+                    for dept in department_instances
+                ]
+        except IntegrityError as e:
+            return json.dumps({"error": str(e), "type": "IntegrityError"})
+        return department_json
     except Exception as e:
         print(str(e))
         return json.dumps({"error": str(e)})
 
 
-def get_department(
-    user, id: int | None = None, name: str | None = None
-) -> DepartmentResponse:
-    "Get a department either by id or its name"
-    if id is None and name is None:
-        return json.dumps({"error": "Department id or name is required"})
-
+def get_department(user, id: int | None = None, name: str | None = None):
+    "Get departments by id or name. Returns all departments when no filter is given"
     if user is None:
         return json.dumps({"error": "User is required"})
 
+    # Models often fill unused arguments with 0 or "", so only a real value counts
+    id = int(id) if id else None
+    name = (name or "").strip().lower()
+
     with Session(engine) as db:
-        statement = select(Department).filter(
-            Department.creator == user,
-            or_(Department.id == id, Department.name == name),
+        statement = select(Department).where(
+            Department.creator_id == user.id, Department.deleted == False
         )
+        if id is not None:
+            statement = statement.where(Department.id == id)
 
-        department = db.exec(statement).first()
-        if department is None:
-            return json.dumps({"error": "No department found"})
+        departments = db.exec(statement.order_by(Department.name)).all()
 
-        return department
+        if id is None and name:
+            # Exact name first, then any department whose name contains it
+            exact = [d for d in departments if d.name == name]
+            departments = exact or [d for d in departments if name in d.name]
+
+        if not departments:
+            return {"error": "No department found"}
+
+        return [
+            DepartmentResponse.model_validate(d, from_attributes=True).model_dump()
+            for d in departments
+        ]
 
 
 def find_department(db, user, id=None, name=None):
@@ -239,7 +263,9 @@ def find_department(db, user, id=None, name=None):
     return db.exec(statement).first()
 
 
-def update_department(user, updates: dict, id: int | None = None, name: str | None = None):
+def update_department(
+    user, updates: dict, id: int | None = None, name: str | None = None
+):
     "Update a department"
     if id is None and name is None:
         return json.dumps({"error": "Department id or name is required"})
@@ -317,18 +343,6 @@ def staff_json(staff: Staff):
     }
 
 
-def check_staff_hours(name, contract_hours, min_hours, shift_exclusions, day_exclusions):
-    "Validate hours/exclusions with StaffData without leaving it in the global list"
-    staff_data = StaffData(
-        name=name,
-        shift_exclusion_list=shift_exclusions,
-        day_exclusion_list=day_exclusions,
-        contract_hours=contract_hours,
-        min_hours=min_hours,
-    )
-    StaffData.remove_staff(staff_data)
-
-
 def create_staff(staff_objects: list[StaffDict] | StaffDict, user: User):
     if isinstance(staff_objects, dict):
         staff_objects = [staff_objects]
@@ -393,32 +407,45 @@ def create_staff(staff_objects: list[StaffDict] | StaffDict, user: User):
 
 def find_staff(db, user, id=None, email=None, name=None) -> list[Staff]:
     "Find the user's (non-deleted) staff by id, email or name. No filter returns everyone"
-    statement = (
-        select(Staff)
-        .where(Staff.creator_id == user.id, Staff.deleted == False)
-        .options(selectinload(Staff.exclusions))
-    )
-    if id is not None:
-        statement = statement.where(Staff.id == id)
-    elif email:
-        statement = statement.where(Staff.email == email.strip())
+    with Session(engine) as db:
+        statement = (
+            select(Staff)
+            .where(Staff.creator_id == user.id, Staff.deleted == False)
+            .options(selectinload(Staff.exclusions))
+        )
+        # Models often fill unused arguments with 0 or "", so only a real value counts
+        id = int(id) if id else None
+        email = (email or "").strip()
+        name = (name or "").strip()
 
-    staff_list = db.exec(statement).all()
+        if id is not None:
+            statement = statement.where(Staff.id == id)
+        elif email:
+            statement = statement.where(Staff.email == email)
 
-    if id is None and not email and name:
-        name = name.strip().lower()
-        staff_list = [
-            stf
-            for stf in staff_list
-            if name
-            in (
-                stf.first_name.lower(),
-                stf.last_name.lower(),
-                f"{stf.first_name} {stf.last_name}".lower(),
-            )
-        ]
+        staff_list = db.exec(statement).all()
 
-    return staff_list
+        if id is None and not email and name:
+            staff_list = match_staff_name(staff_list, name)
+
+        return staff_list
+
+
+def match_staff_name(staff_list: list[Staff], query: str) -> list[Staff]:
+    """
+    Forgiving name search: each word of the query that starts a first or last
+    name counts, so "benjamin", "Ben", "benjamin cook" and "staff benjamin" all
+    find Benjamin Cook. Returns the staff matching the most words.
+    """
+    words = [w for w in query.lower().replace(",", " ").split() if len(w) >= 2]
+
+    def score(stf: Staff) -> int:
+        parts = f"{stf.first_name} {stf.last_name}".lower().split()
+        return sum(any(part.startswith(w) for part in parts) for w in words)
+
+    scored = [(score(stf), stf) for stf in staff_list]
+    best = max((s for s, _ in scored), default=0)
+    return [stf for s, stf in scored if s == best] if best else []
 
 
 def find_one_staff(db, user, id=None, email=None, name=None):
@@ -440,7 +467,9 @@ def find_one_staff(db, user, id=None, email=None, name=None):
     return staff_list[0], None
 
 
-def get_staff(user, id: int | None = None, email: str | None = None, name: str | None = None):
+def get_staff(
+    user, id: int | None = None, email: str | None = None, name: str | None = None
+):
     "Get staff by id, email or name. Returns all staff when no filter is given"
     with Session(engine) as db:
         staff_list = find_staff(db, user, id, email, name)
@@ -467,7 +496,9 @@ def update_staff(
         shift_exclusions = updates.get(
             "shift_exclusion_list", current["shift_exclusion_list"]
         )
-        day_exclusions = updates.get("day_exclusion_list", current["day_exclusion_list"])
+        day_exclusions = updates.get(
+            "day_exclusion_list", current["day_exclusion_list"]
+        )
 
         try:
             data = StaffUpdateRequest(
@@ -489,7 +520,13 @@ def update_staff(
         except ValueError as e:
             return {"error": str(e)}
 
-        for field in ("first_name", "last_name", "position", "contract_hours", "min_hours"):
+        for field in (
+            "first_name",
+            "last_name",
+            "position",
+            "contract_hours",
+            "min_hours",
+        ):
             setattr(staff, field, getattr(data, field))
 
         if "shift_exclusion_list" in updates or "day_exclusion_list" in updates:
@@ -544,7 +581,11 @@ def schedule_json(db, user: User, week_start: str):
         user=user, db=db, week_start=week_start
     )
     if not schedule:
-        return {"week_start": week_start, "schedule": {}, "message": "No schedule for this week"}
+        return {
+            "week_start": week_start,
+            "schedule": {},
+            "message": "No schedule for this week",
+        }
 
     department_names = {
         dept.id: dept.name
@@ -654,7 +695,9 @@ def ai_update_scheduler(
             db.delete(row)
         db.flush()
 
-        save_schedule(user=user, res=updated["result"], current_week=current_week, db=db)
+        save_schedule(
+            user=user, res=updated["result"], current_week=current_week, db=db
+        )
 
         # Recalculate weekly hours (4 hours per shift)
         shifts_worked = Counter(
@@ -735,12 +778,15 @@ tools = [
     {
         "type": "function",
         "name": "get_department",
-        "description": "A function for getting departments and providing some information.",
+        "description": "A function for getting departments by id or name. Call it with no arguments to list all departments.",
         "parameters": {
             "type": "object",
             "properties": {
                 "id": {"type": "number", "description": "The department ID."},
-                "name": {"type": "string", "description": "The department name"},
+                "name": {
+                    "type": "string",
+                    "description": "The department name or part of it, e.g. 'shoes'. No other words.",
+                },
             },
             "additionalProperties": False,
             "required": [],
@@ -754,12 +800,18 @@ tools = [
             "type": "object",
             "properties": {
                 "id": {"type": "number", "description": "The department ID."},
-                "name": {"type": "string", "description": "The current department name."},
+                "name": {
+                    "type": "string",
+                    "description": "The current department name.",
+                },
                 "updates": {
                     "type": "object",
                     "description": "Only the fields to change.",
                     "properties": {
-                        "name": {"type": "string", "description": "The new department name."},
+                        "name": {
+                            "type": "string",
+                            "description": "The new department name.",
+                        },
                         "min_staff": {"type": "integer", "minimum": 1},
                         "max_staff": {"type": "integer", "minimum": 1},
                     },
@@ -895,8 +947,14 @@ tools = [
             "type": "object",
             "properties": {
                 "week_start": weekStartProperty,
-                "department_id": {"type": "number", "description": "The department ID."},
-                "department_name": {"type": "string", "description": "The department name."},
+                "department_id": {
+                    "type": "number",
+                    "description": "The department ID.",
+                },
+                "department_name": {
+                    "type": "string",
+                    "description": "The department name.",
+                },
                 "day": staffSchema["properties"]["day_exclusion_list"]["items"],
                 "shift": staffSchema["properties"]["shift_exclusion_list"]["items"],
                 "staff_ids": {
