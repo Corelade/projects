@@ -52,3 +52,22 @@ jobs:
         DB_TEST_NAME: test_db
       run: |
         python3 -m pytest tests/test_scheduler.py
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+  
+    steps:
+      - name: Deploy to Namecheap
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.NAMECHEAP_HOST }}
+          username: ${{ secrets.NAMECHEAP_USER }}
+          key: ${{ secrets.NAMECHEAP_SSH_KEY }}
+          script: |
+            cd /home/urbexadmin/core/shift_scheduling
+            git pull origin main
+            source svenv/bin/activate
+            pip install -r backend/requirements.txt
+            pkill -f 'uvicorn api:app' || true
+            nohup uvicorn api:app --host 127.0.0.1 --port 8000 > uvicorn.log 2>&1 &
