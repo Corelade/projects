@@ -140,13 +140,24 @@ export default function StaffPage() {
       title="Staff"
       description="Everyone the scheduler can assign, and when they can't work."
       actions={
-        <Button
-          variant="primary"
-          iconLeft={<Icon name="plus" size={16} />}
-          onClick={() => navigate('/staff/new')}
-        >
-          Add staff
-        </Button>
+        <>
+          {/* Icon-only: `loading` swaps the icon for a spinner in place. */}
+          <Button
+            aria-label="Refresh staff"
+            title="Refresh"
+            iconLeft={<Icon name="refresh" size={16} />}
+            loading={isFetching}
+            onClick={() => refetch()}
+            className="px-3"
+          />
+          <Button
+            variant="primary"
+            iconLeft={<Icon name="plus" size={16} />}
+            onClick={() => navigate('/staff/new')}
+          >
+            Add staff
+          </Button>
+        </>
       }
     >
       <div className="flex h-full flex-col gap-4">

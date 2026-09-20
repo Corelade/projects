@@ -119,13 +119,24 @@ export default function DepartmentsPage() {
       title="Departments"
       description="Where staff can be assigned, and how many each shift needs."
       actions={
-        <Button
-          variant="primary"
-          iconLeft={<Icon name="plus" size={16} />}
-          onClick={() => navigate('/departments/new')}
-        >
-          Add department
-        </Button>
+        <>
+          {/* Icon-only: `loading` swaps the icon for a spinner in place. */}
+          <Button
+            aria-label="Refresh departments"
+            title="Refresh"
+            iconLeft={<Icon name="refresh" size={16} />}
+            loading={isFetching}
+            onClick={() => refetch()}
+            className="px-3"
+          />
+          <Button
+            variant="primary"
+            iconLeft={<Icon name="plus" size={16} />}
+            onClick={() => navigate('/departments/new')}
+          >
+            Add department
+          </Button>
+        </>
       }
     >
       <div className="flex h-full flex-col gap-4">
