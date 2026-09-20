@@ -464,9 +464,14 @@ def backtrack(
         (not valid_domains)
         or (len(assigned_staff_count) == len(staff))
         and (num_assigned_staff > min_required_staff)
+        # and all(
+        #     len(assignment[day][dom][tme]) > 0
+        #     for day, val in domains.items()
+        #     for dom in val
+        #     for tme in shift_time
+        # )
         and all(
-            # len(assignment[day][dom.name][tme]) > 0
-            len(assignment[day][dom][tme]) > 0
+            len(assignment[day][dom][tme]) >= dom.min_staff
             for day, val in domains.items()
             for dom in val
             for tme in shift_time

@@ -176,9 +176,6 @@ weekStartProperty = {
 load_dotenv()
 import os
 
-# api_key = os.getenv("SHIFT_AI_KEY")
-# client = AsyncOpenAI(api_key=api_key)
-
 def get_openai_client():
     api_key = os.getenv("SHIFT_AI_KEY")
 
