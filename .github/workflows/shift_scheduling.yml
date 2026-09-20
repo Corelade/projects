@@ -58,6 +58,31 @@ jobs:
     runs-on: ubuntu-latest
   
     steps:
+      - name: Check deployment secrets
+        env:
+          HOST: ${{ secrets.NAMECHEAP_HOST }}
+          USER: ${{ secrets.NAMECHEAP_USER }}
+          KEY: ${{ secrets.NAMECHEAP_SSH_KEY }}
+        run: |
+          if [ -n "$HOST" ]; then
+            echo "NAMECHEAP_HOST is set"
+            echo "HOST length: ${#HOST}"
+          else
+            echo "NAMECHEAP_HOST is EMPTY"
+          fi
+
+          if [ -n "$USER" ]; then
+            echo "NAMECHEAP_USER is set"
+          else
+            echo "NAMECHEAP_USER is EMPTY"
+          fi
+
+          if [ -n "$KEY" ]; then
+            echo "NAMECHEAP_SSH_KEY is set"
+          else
+            echo "NAMECHEAP_SSH_KEY is EMPTY"
+          fi
+      
       - name: Deploy to Namecheap
         uses: appleboy/ssh-action@v1.2.2
         with:
