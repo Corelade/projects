@@ -176,8 +176,16 @@ weekStartProperty = {
 load_dotenv()
 import os
 
-api_key = os.getenv("SHIFT_AI_KEY")
-client = AsyncOpenAI(api_key=api_key)
+# api_key = os.getenv("SHIFT_AI_KEY")
+# client = AsyncOpenAI(api_key=api_key)
+
+def get_openai_client():
+    api_key = os.getenv("SHIFT_AI_KEY")
+
+    if not api_key:
+        raise RuntimeError("SHIFT_AI_KEY is not configured")
+
+    return AsyncOpenAI(api_key=api_key)
 
 
 def create_department(
@@ -971,6 +979,7 @@ tools = [
 
 
 async def call_openai(input_list):
+    client = get_openai_client()
     response = await client.responses.create(
         model="gpt-5.4",
         input=input_list,
