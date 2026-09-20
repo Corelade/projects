@@ -1098,6 +1098,46 @@ def delete_department(id, db: SessionDep, user: UserQuery):
     return department
 
 
+# What each AI tool changes, in the web app's RTK Query cache tags. The reply
+# carries the tags of the tools that ran, so the page behind the chat panel
+# refreshes itself instead of showing stale data until a manual reload.
+TOOL_TAGS = {
+    "create_department": ["Department", "Schedule"],
+    "update_department": ["Department", "Schedule"],
+    "delete_department": ["Department", "Schedule"],
+    "create_staff": ["Staff", "Schedule", "Portal"],
+    "update_staff": ["Staff", "Schedule", "Portal"],
+    "delete_staff": ["Staff", "Schedule", "Portal"],
+    "ai_scheduler": ["Schedule", "Portal"],
+    "ai_update_scheduler": ["Schedule", "Portal"],
+    "delete_schedule": ["Schedule", "Portal"],
+}
+
+
+def tool_failed(output: str) -> bool:
+    "Whether a tool's JSON output is an error rather than a result"
+    try:
+        parsed = json.loads(output)
+        # Some tools return an already-JSON string; look one level in
+        if isinstance(parsed, str):
+            parsed = json.loads(parsed)
+    except (TypeError, ValueError):
+        return False
+    return isinstance(parsed, dict) and "error" in parsed
+
+
+def changed_tags(trace: list[dict]) -> list[str]:
+    "The cache tags touched by the tools that ran and succeeded"
+    tags = []
+    for call in trace:
+        if tool_failed(call["output"]):
+            continue
+        for tag in TOOL_TAGS.get(call["name"], []):
+            if tag not in tags:
+                tags.append(tag)
+    return tags
+
+
 class ChatTranscript:
     "An AskAI chat collected in memory while its socket is open, saved once at the end"
 
@@ -1119,18 +1159,10 @@ class ChatTranscript:
 
     def add_tools(self, trace: list[dict]):
         for call in trace:
-            try:
-                output = json.loads(call["output"])
-                # Some tools return an already-JSON string; look one level in
-                if isinstance(output, str):
-                    output = json.loads(output)
-            except (TypeError, ValueError):
-                output = None
-            failed = isinstance(output, dict) and "error" in output
             self.add(
                 "tool",
                 call["output"][:4000],
-                is_error=failed,
+                is_error=tool_failed(call["output"]),
                 tool_name=call["name"],
                 tool_arguments=call["arguments"],
             )
@@ -1201,7 +1233,9 @@ async def chat_endpoint(websocket: WebSocket):
                 ai_response = await ai_chat(input_list=input_list, user=user, trace=trace)
                 transcript.add_tools(trace)
                 transcript.add("assistant", ai_response)
-                await websocket.send_json({"message": ai_response})
+                await websocket.send_json(
+                    {"message": ai_response, "changed": changed_tags(trace)}
+                )
             except WebSocketDisconnect:
                 raise
             except Exception as e:
@@ -1221,7 +1255,9 @@ async def chat_endpoint(websocket: WebSocket):
                 ai_response = await ai_chat(input_list=input_list, user=user, trace=trace)
                 transcript.add_tools(trace)
                 transcript.add("assistant", ai_response)
-                await websocket.send_json({"message": ai_response})
+                await websocket.send_json(
+                    {"message": ai_response, "changed": changed_tags(trace)}
+                )
     except WebSocketDisconnect:
         pass
     finally:

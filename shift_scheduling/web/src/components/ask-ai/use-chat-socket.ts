@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAppDispatch, useAppSelector } from '@/store'
+import { baseApi } from '@/store/api/base-api'
 import { ENDPOINTS } from '@/store/api/endpoints'
 import { signedOut } from '@/store/slices/auth-slice'
 // import { readStoredMessages, writeStoredMessages } from './chat-storage'
@@ -39,21 +40,54 @@ function socketUrl(token: string) {
   return base.toString()
 }
 
+/** The cache tags the server may report, mirroring tagTypes in base-api.ts. */
+const TAGS = [
+  'Staff',
+  'Department',
+  'Schedule',
+  'Portal',
+  'AvailabilityRequest',
+  'Notification',
+] as const
+type Tag = (typeof TAGS)[number]
+
+/** The bubble to show, plus any cache tags the reply says are now stale. */
+interface ParsedFrame {
+  message: Omit<ChatMessage, 'id'>
+  changed: Tag[]
+}
+
 /**
  * Frames are JSON both ways: we send {"message": "..."} and expect
- * {"message": "..."} back, or {"error": "..."}. A frame that isn't JSON is
- * shown as-is rather than dropped, so a backend mid-change still reads.
+ * {"message": "...", "changed": [...]} back, or {"error": "..."}. A frame that
+ * isn't JSON is shown as-is rather than dropped, so a backend mid-change still
+ * reads — and one without "changed" simply invalidates nothing.
  */
-function parseFrame(raw: unknown): Omit<ChatMessage, 'id'> {
-  if (typeof raw !== 'string') return { role: 'error', text: 'Unreadable reply.' }
+function parseFrame(raw: unknown): ParsedFrame {
+  if (typeof raw !== 'string') {
+    return { message: { role: 'error', text: 'Unreadable reply.' }, changed: [] }
+  }
   try {
-    const data = JSON.parse(raw) as { message?: unknown; error?: unknown }
-    if (typeof data?.message === 'string') return { role: 'ai', text: data.message }
-    if (typeof data?.error === 'string') return { role: 'error', text: data.error }
+    const data = JSON.parse(raw) as {
+      message?: unknown
+      error?: unknown
+      changed?: unknown
+    }
+    // A tag this build doesn't know is dropped rather than trusted blindly.
+    const changed = Array.isArray(data?.changed)
+      ? data.changed.filter((t): t is Tag => TAGS.includes(t as Tag))
+      : []
+
+    if (typeof data?.message === 'string') {
+      return { message: { role: 'ai', text: data.message }, changed }
+    }
+    if (typeof data?.error === 'string') {
+      return { message: { role: 'error', text: data.error }, changed }
+    }
   } catch {
     // Not JSON — fall through to the raw text.
   }
-  return { role: 'ai', text: raw }
+  return { message: { role: 'ai', text: raw }, changed: [] }
 }
 
 /**
@@ -137,7 +171,11 @@ export function useChatSocket(enabled: boolean) {
     }
     ws.onmessage = (event) => {
       if (socketRef.current !== ws) return
-      push(parseFrame(event.data))
+      const { message, changed } = parseFrame(event.data)
+      push(message)
+      // The AI changed data behind the panel: refetch whatever it touched, so
+      // the page underneath updates without a manual reload.
+      if (changed.length) dispatch(baseApi.util.invalidateTags(changed))
       setAwaitingReply(false)
     }
     ws.onclose = (event) => {
