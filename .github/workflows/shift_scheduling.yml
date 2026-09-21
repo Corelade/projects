@@ -70,5 +70,6 @@ jobs:
             source svenv/bin/activate
             pip install -r backend/requirements.txt
             cd backend
-            # pkill -f 'uvicorn api:app' || true
+            alembic upgrade head
+            pkill -f 'uvicorn api:app' || true
             nohup uvicorn api:app --host 127.0.0.1 --port 8000 > uvicorn.log 2>&1 &
