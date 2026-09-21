@@ -464,18 +464,19 @@ def backtrack(
         (not valid_domains)
         or (len(assigned_staff_count) == len(staff))
         and (num_assigned_staff > min_required_staff)
-        # and all(
-        #     len(assignment[day][dom][tme]) > 0
-        #     for day, val in domains.items()
-        #     for dom in val
-        #     for tme in shift_time
-        # )
         and all(
-            len(assignment[day][dom][tme]) >= dom.min_staff
+            len(assignment[day][dom][tme]) > 0
             for day, val in domains.items()
             for dom in val
             for tme in shift_time
         )
+        # '''This block below is making the constraint harder and the sschedule fails few times to have an appointment'''
+        # and all(
+        #     len(assignment[day][dom][tme]) >= dom.min_staff
+        #     for day, val in domains.items()
+        #     for dom in val
+        #     for tme in shift_time
+        # )
     ):
         # if len(assigned_staff_count) == len(staff):
         "This just checks if staff has worked min_hours. We can ensure staff minimum hours is set at a certain threshold as well for a stricter assignment"
